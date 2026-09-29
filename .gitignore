@@ -1,0 +1,18 @@
+# Python virtual environment
+python_engine/.venv/
+
+# Python cache
+**/__pycache__/
+*.pyc
+*.pyo
+
+# IDE / editor
+.vscode/
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# PDF test files
+*.pdf
