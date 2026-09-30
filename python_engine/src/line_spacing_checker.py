@@ -84,7 +84,8 @@ def merge_rows(rows):
     return merged
 
 
-def collect_observations(pdf_path: str):
+def collect_observations(pdf_path: str, page_range=None):
+    """page_range = (halaman_awal, halaman_akhir) 1-based, inklusif. None = semua halaman."""
     doc = pymupdf.open(pdf_path)
     total_lines = 0
     body_candidates = 0
@@ -92,6 +93,8 @@ def collect_observations(pdf_path: str):
     asc_desc = []
 
     for page_index, page in enumerate(doc, start=1):
+        if page_range and not (page_range[0] <= page_index <= page_range[1]):
+            continue
         rows = extract_rows(page)
         total_lines += len(rows)
         for _y, _s, is_body, _r, _t, ad in rows:
@@ -180,50 +183,75 @@ MIN_OBS = 15           # minimal bukti
 SKIP_WARN_SHARE = 0.10 # peringatan bila celah "2x" melebihi porsi ini
 
 
-def evaluate(pdf_path: str) -> dict:
-    total, body, obs, _ = collect_observations(pdf_path)
-    ratios = [(p, d / (s * TNR_LINE_HEIGHT_FACTOR)) for p, d, s in obs]
+DOMINANT_BUCKET = 0.05   # lebar kelompok untuk mencari rasio dominan
+PAR_GAP_MARGIN = 0.15    # celah > dominan + margin = jarak antar paragraf / heading (bukan spasi baris)
 
-    single, skipped = [], 0
-    for p, r in ratios:
-        # celah ~2x spasi aturan = kemungkinan ada baris kosong di antaranya
-        if abs(r - 2 * RULE_RATIO) <= 2 * RATIO_TOL:
-            skipped += 1
-        else:
-            single.append((p, r))
 
+def judge_ratios(ratios) -> dict:
+    """
+    Fungsi murni (mudah dites). ratios = list of (halaman, rasio).
+
+    Logika:
+      1. Cari rasio DOMINAN (modus) di halaman yang dinilai.
+      2. Dominan jauh dari 1,15 (mis. 1,0 / 1,5 / 2,0)  -> FAIL.
+      3. Dominan ~1,15 -> buang celah besar (antar paragraf/heading),
+         lalu hitung porsi celah dalam-paragraf yang sesuai 1,15.
+         >= 90% PASS, selain itu REVIEW (bukan FAIL, karena bisa jadi
+         tabel/rumus/campuran font yang lolos filter).
+    """
     result = {
         "rule": "line_spacing",
         "expected": RULE_RATIO,
-        "n_single": len(single),
-        "n_skipped_gaps": skipped,
+        "n_single": 0,
+        "n_skipped_gaps": 0,
+        "share_ok": None,
+        "dominant_ratio": None,
+        "off_pages": [],
+        "warning": None,
     }
 
-    if len(single) < MIN_OBS:
+    if len(ratios) < MIN_OBS:
         result.update(status="REVIEW",
-                      reason=f"Bukti tidak cukup ({len(single)} < {MIN_OBS} celah baris)")
+                      reason=f"Bukti tidak cukup ({len(ratios)} < {MIN_OBS} celah baris)")
         return result
 
-    ok = [(p, r) for p, r in single if abs(r - RULE_RATIO) <= RATIO_TOL]
-    bad = [(p, r) for p, r in single if abs(r - RULE_RATIO) > RATIO_TOL]
-    share = len(ok) / len(single)
-    dominant = Counter(round(r, 2) for _, r in single).most_common(1)[0][0]
+    def bucket(r):
+        return round(round(r / DOMINANT_BUCKET) * DOMINANT_BUCKET, 2)
 
-    result.update(share_ok=share, dominant_ratio=dominant,
-                  off_pages=sorted({p for p, _ in bad}))
+    dominant = Counter(bucket(r) for _, r in ratios).most_common(1)[0][0]
+    result["dominant_ratio"] = dominant
+
+    in_par = [(p, r) for p, r in ratios if r <= dominant + PAR_GAP_MARGIN]
+    result["n_single"] = len(in_par)
+    result["n_skipped_gaps"] = len(ratios) - len(in_par)
+
+    if abs(dominant - RULE_RATIO) > RATIO_TOL + 1e-9:
+        bad_pages = sorted({p for p, r in in_par if abs(r - RULE_RATIO) > RATIO_TOL})
+        result.update(status="FAIL", off_pages=bad_pages,
+                      reason=f"Spasi baris dominan {dominant:.2f}, seharusnya {RULE_RATIO}")
+        return result
+
+    ok = [(p, r) for p, r in in_par if abs(r - RULE_RATIO) <= RATIO_TOL]
+    bad = [(p, r) for p, r in in_par if abs(r - RULE_RATIO) > RATIO_TOL]
+    share = len(ok) / len(in_par)
+    result.update(share_ok=share, off_pages=sorted({p for p, _ in bad}))
 
     if share >= PASS_SHARE:
         result.update(status="PASS",
-                      reason=f"{share:.0%} celah baris sesuai 1,15 (±{RATIO_TOL})")
+                      reason=f"{share:.0%} celah baris dalam paragraf sesuai 1,15 (±{RATIO_TOL})")
     else:
-        result.update(status="FAIL",
-                      reason=f"Hanya {share:.0%} sesuai 1,15; rasio dominan {dominant}")
-
-    all_gaps = len(single) + skipped
-    if all_gaps and skipped / all_gaps > SKIP_WARN_SHARE:
-        result["warning"] = (f"{skipped}/{all_gaps} celah ({skipped / all_gaps:.0%}) "
-                             "dilewati sebagai celah ~2x; verdict kurang kuat")
+        result.update(status="REVIEW",
+                      reason=(f"Spasi dominan 1,15 tetapi hanya {share:.0%} celah baris "
+                              "sesuai; periksa halaman yang ditandai"))
     return result
+
+
+def evaluate(pdf_path: str, page_range=None) -> dict:
+    """page_range = (awal, akhir) halaman fisik 1-based. Sebaiknya bagian inti saja
+    (Bab 1 sampai Daftar Pustaka), karena daftar isi/tabel/lampiran bukan teks paragraf."""
+    _, _, obs, _ = collect_observations(pdf_path, page_range)
+    ratios = [(p, d / (s * TNR_LINE_HEIGHT_FACTOR)) for p, d, s in obs]
+    return judge_ratios(ratios)
 
 
 def show_double_gaps(pdf_path: str):

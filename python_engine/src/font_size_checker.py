@@ -3,6 +3,8 @@ from collections import Counter
 
 import pymupdf
 
+from filters import is_symbol_only, is_page_number_text, is_caption_text
+
 
 # ============================================================
 # FONT SIZE RULE
@@ -27,13 +29,19 @@ def is_expected_size(size: float) -> bool:
 # EXTRACT FONT SIZES
 # ============================================================
 
-def extract_font_sizes(pdf_path: str) -> Counter:
+def extract_font_sizes_detailed(pdf_path: str):
     """
-    Mengambil semua ukuran font dari text layer PDF.
-    Menghasilkan Counter berisi ukuran font dan jumlah kemunculannya.
+    Return (main_counter, caption_counter).
+
+    - main_counter    : ukuran font teks biasa (yang dinilai ketat).
+    - caption_counter : ukuran font caption Tabel/Gambar (hanya jadi peringatan).
+
+    Dilewati: span simbol saja dan baris nomor halaman
+    (nomor halaman dinilai oleh page_number_analyzer).
     """
 
-    size_counter = Counter()
+    main_counter = Counter()
+    caption_counter = Counter()
 
     doc = pymupdf.open(pdf_path)
 
@@ -49,6 +57,23 @@ def extract_font_sizes(pdf_path: str) -> Counter:
 
                 for line in block["lines"]:
 
+                    line_text = "".join(
+                        span.get("text", "")
+                        for span in line.get("spans", [])
+                    ).strip()
+
+                    if not line_text:
+                        continue
+
+                    if is_page_number_text(line_text):
+                        continue
+
+                    target = (
+                        caption_counter
+                        if is_caption_text(line_text)
+                        else main_counter
+                    )
+
                     for span in line.get("spans", []):
 
                         text = span.get("text", "").strip()
@@ -56,17 +81,23 @@ def extract_font_sizes(pdf_path: str) -> Counter:
                         if not text:
                             continue
 
-                        size = round(
-                            float(span.get("size", 0)),
-                            2
-                        )
+                        if is_symbol_only(text):
+                            continue
 
-                        size_counter[size] += 1
+                        size = round(float(span.get("size", 0)), 2)
+
+                        target[size] += 1
 
     finally:
         doc.close()
 
-    return size_counter
+    return main_counter, caption_counter
+
+
+def extract_font_sizes(pdf_path: str) -> Counter:
+    """Kompatibel dengan kode lama: hanya ukuran font teks biasa."""
+    main_counter, _ = extract_font_sizes_detailed(pdf_path)
+    return main_counter
 
 
 # ============================================================

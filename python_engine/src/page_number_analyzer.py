@@ -196,6 +196,7 @@ def evaluate(pdf_path):
                 if not (is_times(x["font"]) and abs(x["size"] - want) <= SIZE_TOL)]
     if bad_font:
         combos = Counter((f, s) for _, f, s in bad_font).most_common()
+        # Aturan (konfirmasi staff): nomor halaman WAJIB Times New Roman 12 pt -> FAIL.
         font_r = {"status": "FAIL",
                   "message": f"{len(bad_font)} dari {len(found)} nomor bukan "
                              f"{PAGE_NUMBER['font_family']} {want:.0f} pt: {combos}",

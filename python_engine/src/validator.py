@@ -4,9 +4,11 @@ import pymupdf
 from statistics import median
 
 from font_checker import extract_fonts, normalize_font_name
-from font_size_checker import extract_font_sizes, is_expected_size
+from font_size_checker import extract_font_sizes_detailed, is_expected_size
+from filters import is_page_number_text
 from line_spacing_checker import evaluate as evaluate_line_spacing
 from page_number_analyzer import evaluate as evaluate_page_number
+from section_analyzer import scan_pages, analyze_structure
 
 from rules import (
     PAGE,
@@ -33,6 +35,16 @@ def cm_to_pt(cm):
 
 def points_to_cm(pt):
     return pt / PT_PER_CM
+
+# ============================================================
+# DOCUMENT STRUCTURE
+# ============================================================
+
+def analyze_document_structure(pdf_path):
+    """Mendapatkan struktur dokumen berdasarkan section_analyzer."""
+    pages = scan_pages(pdf_path)
+    structure = analyze_structure(pages)
+    return pages, structure
 
 
 # ============================================================
@@ -116,26 +128,30 @@ def check_font(pdf_path):
 # ============================================================
 
 def check_font_size(pdf_path):
-    sizes = extract_font_sizes(pdf_path)
+    sizes, caption_sizes = extract_font_sizes_detailed(pdf_path)
 
-    invalid_sizes = []
+    invalid_sizes = [
+        {"size": size, "count": count}
+        for size, count in sizes.items()
+        if not is_expected_size(size)
+    ]
 
-    for size, count in sizes.items():
+    invalid_captions = [
+        {"size": size, "count": count}
+        for size, count in caption_sizes.items()
+        if not is_expected_size(size)
+    ]
 
-        if not is_expected_size(size):
-            invalid_sizes.append({
-                "size": size,
-                "count": count
-            })
-
-    if invalid_sizes:
+    # Aturan (konfirmasi staff): caption Tabel/Gambar juga WAJIB 12 pt.
+    if invalid_sizes or invalid_captions:
         return {
             "status": "FAIL",
             "message": (
                 f"Ditemukan ukuran font selain "
                 f"{FONT['size_pt']:.2f} pt."
             ),
-            "details": invalid_sizes
+            "details": invalid_sizes,
+            "caption_details": invalid_captions,
         }
 
     return {
@@ -144,7 +160,8 @@ def check_font_size(pdf_path):
             f"Semua ukuran font sesuai "
             f"{FONT['size_pt']:.2f} pt."
         ),
-        "details": []
+        "details": [],
+        "caption_details": [],
     }
 
 
@@ -152,12 +169,12 @@ def check_font_size(pdf_path):
 # LINE SPACING
 # ============================================================
 
-def check_line_spacing(pdf_path):
+def check_line_spacing(pdf_path, core_range=None):
     """
     Adapter: mengubah hasil evaluate() dari line_spacing_checker
     menjadi format standar validator: status / message / details.
     """
-    r = evaluate_line_spacing(pdf_path)
+    r = evaluate_line_spacing(pdf_path, core_range)
 
     details = {
         "expected": r.get("expected"),
@@ -327,8 +344,8 @@ def check_margins(pdf_path):
                 if not text:
                     continue
 
-                # Abaikan nomor halaman sederhana
-                if re.fullmatch(r"\d+", text):
+                # Abaikan nomor halaman (Arab maupun Romawi)
+                if is_page_number_text(text):
                     continue
 
                 x0 = min(
@@ -442,8 +459,199 @@ def check_margins(pdf_path):
     }
 
 # ============================================================
+# STRUKTUR: HALAMAN AWAL, BAGIAN INTI, NOMOR HALAMAN
+# ============================================================
+
+MAX_CORE_PAGES = 10
+
+RE_FORBIDDEN_FRONT = re.compile(
+    r"^(ABSTRAK|RINGKASAN|HALAMAN PENGESAHAN|LEMBAR PENGESAHAN)\.?$"
+)
+
+
+def check_front_matter(pages, structure):
+    """Proposal tidak boleh punya sampul, pengesahan, ringkasan, atau abstrak."""
+    di = structure.get("daftar_isi")
+    bab1 = structure.get("bab1")
+
+    if not di:
+        return {
+            "status": "REVIEW",
+            "message": "Daftar Isi tidak ditemukan; halaman awal tidak dapat dinilai.",
+            "details": [],
+        }
+
+    problems = []
+
+    if di > 1:
+        problems.append(
+            f"{di - 1} halaman sebelum Daftar Isi (sampul/pengesahan?): "
+            f"halaman {list(range(1, di))}"
+        )
+
+    limit = bab1 if bab1 else di
+    for p in pages:
+        if p["no"] >= limit:
+            continue
+        for up, _first, raw in p["lines"]:
+            if RE_FORBIDDEN_FRONT.match(up):
+                problems.append(f"halaman {p['no']} memuat judul \"{raw}\"")
+
+    if problems:
+        return {
+            "status": "FAIL",
+            "message": "; ".join(problems),
+            "details": problems,
+        }
+
+    return {
+        "status": "PASS",
+        "message": "Tidak ada sampul, pengesahan, ringkasan, atau abstrak.",
+        "details": [],
+    }
+
+
+def check_core_pages(structure):
+    """Bagian inti (Bab 1 sampai Daftar Pustaka) maksimum 10 halaman."""
+    bab1 = structure.get("bab1")
+    lo = structure.get("core_lo")
+    hi = structure.get("core_hi")
+
+    if not bab1 or not lo or not hi:
+        return {
+            "status": "REVIEW",
+            "message": (
+                "Bagian inti tidak dapat ditentukan "
+                "(Bab 1 atau Daftar Pustaka tidak ditemukan)."
+            ),
+            "details": {},
+        }
+
+    n_min = lo - bab1 + 1
+    n_max = hi - bab1 + 1
+    details = {"min_pages": n_min, "max_pages": n_max}
+
+    if n_min > MAX_CORE_PAGES:
+        return {
+            "status": "FAIL",
+            "message": (
+                f"Bagian inti {n_min} halaman (hal. fisik {bab1}-{lo}), "
+                f"melebihi maksimum {MAX_CORE_PAGES}."
+            ),
+            "details": details,
+        }
+
+    if n_max > MAX_CORE_PAGES:
+        return {
+            "status": "REVIEW",
+            "message": (
+                f"Bagian inti {n_min}-{n_max} halaman; batas akhir belum pasti "
+                f"(maksimum {MAX_CORE_PAGES})."
+            ),
+            "details": details,
+        }
+
+    return {
+        "status": "PASS",
+        "message": f"Bagian inti {n_max} halaman (maksimum {MAX_CORE_PAGES}).",
+        "details": details,
+    }
+
+
+def check_page_number_coverage(page_number_result, structure):
+    """Setiap halaman sampai akhir bagian inti wajib bernomor.
+    Halaman lampiran tanpa nomor cukup REVIEW."""
+    details = page_number_result["position"].get("details", {})
+    missing = details.get("pages_without_number", []) if isinstance(details, dict) else []
+
+    if not missing:
+        return {
+            "status": "PASS",
+            "message": "Semua halaman memiliki nomor halaman.",
+            "details": [],
+        }
+
+    limit = structure.get("core_hi")
+
+    if limit:
+        must = [p for p in missing if p <= limit]
+        rest = [p for p in missing if p > limit]
+    else:
+        must, rest = [], list(missing)
+
+    if must:
+        return {
+            "status": "FAIL",
+            "message": f"Halaman tanpa nomor (sampai akhir bagian inti): {must}",
+            "details": missing,
+        }
+
+    return {
+        "status": "REVIEW",
+        "message": f"Halaman tanpa nomor: {rest}; periksa apakah termasuk lampiran.",
+        "details": missing,
+    }
+
+
+# ============================================================
+# PRINT DOCUMENT STRUCTURE
+# ============================================================
+
+def print_document_structure(structure):
+    
+    pages, structure = analyze_document_structure(pdf_path)
+
+    print()
+    print("-" * 70)
+    print("DOCUMENT STRUCTURE")
+    print("-" * 70)
+
+    if structure["daftar_isi"]:
+        print(
+            f"Daftar Isi        : halaman "
+            f"{structure['daftar_isi']}"
+        )
+    else:
+        print("Daftar Isi        : tidak ditemukan")
+
+    if structure["bab1"]:
+        print(
+            f"Bab 1             : halaman "
+            f"{structure['bab1']}"
+        )
+    else:
+        print("Bab 1             : tidak ditemukan")
+
+    if structure["daftar_pustaka"]:
+        print(
+            f"Daftar Pustaka    : halaman "
+            f"{structure['daftar_pustaka']}"
+        )
+    else:
+        print("Daftar Pustaka    : tidak ditemukan")
+
+    if structure["lampiran"]:
+        print(
+            f"Lampiran          : halaman "
+            f"{structure['lampiran']}"
+        )
+    else:
+        print("Lampiran          : tidak ditemukan")
+
+    if (
+        structure["core_lo"] is not None
+        and structure["core_hi"] is not None
+    ):
+        print(
+            f"Bagian inti       : halaman "
+            f"{structure['core_lo']}-"
+            f"{structure['core_hi']}"
+        )
+
+# ============================================================
 # PRINT MARGIN RESULT
 # ============================================================
+
 def print_margin_result(result):
 
     print()
@@ -453,14 +661,31 @@ def print_margin_result(result):
 
     if result["status"] == "PASS":
 
-        print("✅ Left   : Tidak ada konten melewati batas 4 cm")
-        print("✅ Right  : Tidak ada konten melewati batas 3 cm")
-        print("✅ Top    : Tidak ada konten melewati batas 3 cm")
-        print("✅ Bottom : Tidak ada konten melewati batas 3 cm")
+        print(
+            "✅ Left   : Tidak ada konten "
+            "melewati batas 4 cm"
+        )
+
+        print(
+            "✅ Right  : Tidak ada konten "
+            "melewati batas 3 cm"
+        )
+
+        print(
+            "✅ Top    : Tidak ada konten "
+            "melewati batas 3 cm"
+        )
+
+        print(
+            "✅ Bottom : Tidak ada konten "
+            "melewati batas 3 cm"
+        )
 
     else:
 
-        print(f"⚠️ {result['message']}")
+        print(
+            f"⚠️ {result['message']}"
+        )
 
         if result["details"]:
 
@@ -475,10 +700,11 @@ def print_margin_result(result):
                 )
 
     print()
-    print(
-        f"Margin Status : {result['status']}"
-    )
 
+    print(
+        f"Margin Status : "
+        f"{result['status']}"
+    )
 # ============================================================
 # MAIN VALIDATOR
 # ============================================================
@@ -494,7 +720,13 @@ def validate_pdf(pdf_path):
     print(f"File           : {pdf_path}")
     print(f"Jumlah halaman : {len(doc)}")
 
-    doc.close()
+    doc.close()  
+      
+    # --------------------------------------------------------
+    # DOCUMENT STRUCTURE
+    # --------------------------------------------------------
+
+    pages, structure = analyze_document_structure(pdf_path)
 
     # --------------------------------------------------------
     # PAGE SIZE
@@ -524,13 +756,21 @@ def validate_pdf(pdf_path):
     # LINE SPACING
     # --------------------------------------------------------
 
-    line_spacing_result = check_line_spacing(pdf_path)
+    core_range = None
+    if structure.get("bab1") and structure.get("core_hi"):
+        core_range = (structure["bab1"], structure["core_hi"])
+
+    line_spacing_result = check_line_spacing(pdf_path, core_range)
 
     # --------------------------------------------------------
     # PAGE NUMBER
     # --------------------------------------------------------
 
     page_number_result = check_page_number(pdf_path)
+
+    front_result = check_front_matter(pages, structure)
+    core_result = check_core_pages(structure)
+    coverage_result = check_page_number_coverage(page_number_result, structure)
 
     # ========================================================
     # PRINT
@@ -565,6 +805,11 @@ def validate_pdf(pdf_path):
             f"✅ Font Size       : "
             f"{FONT['size_pt']:.2f} pt"
         )
+    elif font_size_result["status"] == "REVIEW":
+        print(
+            f"⚠️ Font Size       : "
+            f"{font_size_result['message']}"
+        )
     else:
         print(
             f"❌ Font Size       : "
@@ -582,7 +827,7 @@ def validate_pdf(pdf_path):
     print(f"{icon} Line Spacing    : {ls['message']}")
     if ls["details"]["warning"]:
         print(f"   ⚠️ {ls['details']['warning']}")
-    if ls["status"] == "FAIL" and ls["details"]["off_pages"]:
+    if ls["status"] != "PASS" and ls["details"]["off_pages"]:
         print(f"   Halaman menyimpang: {ls['details']['off_pages']}")
 
     # Page number
@@ -596,6 +841,11 @@ def validate_pdf(pdf_path):
         print(f"{icons[pn_font['status']]} Nomor Hal. Font  : {pn_font['message']}")
         print(f"{icons[pn_pos['status']]} Nomor Hal. Posisi: {pn_pos['message']}")
 
+    print()
+    print(f"{icons[coverage_result['status']]} Cakupan Nomor  : {coverage_result['message']}")
+    print(f"{icons[front_result['status']]} Halaman Awal    : {front_result['message']}")
+    print(f"{icons[core_result['status']]} Bagian Inti     : {core_result['message']}")
+
     # ========================================================
     # DETAILS FONT SIZE
     # ========================================================
@@ -608,6 +858,19 @@ def validate_pdf(pdf_path):
         print("-" * 70)
 
         for item in font_size_result["details"]:
+            print(
+                f"- {item['size']:.2f} pt "
+                f"({item['count']} kali)"
+            )
+
+    if font_size_result.get("caption_details"):
+
+        print()
+        print("-" * 70)
+        print("UKURAN FONT CAPTION TABEL/GAMBAR TIDAK SESUAI")
+        print("-" * 70)
+
+        for item in font_size_result["caption_details"]:
             print(
                 f"- {item['size']:.2f} pt "
                 f"({item['count']} kali)"
@@ -642,6 +905,9 @@ def validate_pdf(pdf_path):
         line_spacing_result["status"],
         page_number_result["font"]["status"],
         page_number_result["position"]["status"],
+        front_result["status"],
+        core_result["status"],
+        coverage_result["status"],
     ]
 
     if "FAIL" in results:

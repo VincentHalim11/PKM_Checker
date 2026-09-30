@@ -1,7 +1,10 @@
+import re
 import sys
 from collections import Counter
 
 import pymupdf
+
+from filters import is_symbol_only
 
 
 # ============================================================
@@ -21,6 +24,9 @@ def normalize_font_name(font_name: str) -> str:
     """
 
     name = font_name.strip()
+
+    # Buang prefiks subset PDF, mis. "ABCDEF+TimesNewRomanPSMT"
+    name = re.sub(r"^[A-Z]{6}\+", "", name)
 
     # Times New Roman variants
     if (
@@ -70,6 +76,10 @@ def extract_fonts(pdf_path: str) -> Counter:
                         text = span.get("text", "").strip()
 
                         if not text:
+                            continue
+
+                        # Abaikan span yang hanya berisi simbol (subscript, centang, bullet)
+                        if is_symbol_only(text):
                             continue
 
                         font_name = span.get("font", "Unknown")
