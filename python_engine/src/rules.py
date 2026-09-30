@@ -78,3 +78,104 @@ MAIN_SECTION = {
     "starts_from": "BAB I PENDAHULUAN",
     "ends_at": "DAFTAR PUSTAKA",
 }
+
+# ============================================================
+# PKM 2026 - SCHEME PROFILES
+# ============================================================
+
+SCHEMES = {
+
+    "GENERAL": {
+        "structure": "toc_core_attachment",
+
+        "preliminary": {
+            "has_toc": True,
+            "numbering": "roman",
+            "position": "bottom_right",
+        },
+
+        "core": {
+            "start": "BAB 1",
+            "end": "DAFTAR PUSTAKA",
+            "min_pages": 0,
+            "max_pages": 10,
+            "numbering": "arabic",
+            "position": "top_right",
+        },
+
+        "attachment": {
+            "start": "LAMPIRAN",
+            "numbering": "arabic",
+            "position": "top_right",
+        },
+
+        "paragraph": {
+            "line_spacing": 1.15,
+            "alignment": "justify",
+        },
+    },
+
+    "GFT": {
+        "structure": "toc_core_attachment",
+
+        "preliminary": {
+            "has_toc": True,
+            "numbering": "roman",
+            "position": "bottom_right",
+        },
+
+        "core": {
+            "start": "BAB 1",
+            "end": "DAFTAR PUSTAKA",
+            "min_pages": 8,
+            "max_pages": 15,
+            "numbering": "arabic",
+            "position": "top_right",
+        },
+
+        "attachment": {
+            "start": "LAMPIRAN",
+            "numbering": "arabic",
+            "position": "top_right",
+        },
+
+        "paragraph": {
+            "line_spacing": 1.15,
+            "alignment": "justify",
+        },
+    },
+
+    "AI": {
+        "structure": "article_core_attachment",
+
+        "preliminary": {
+            "has_toc": False,
+        },
+
+        "core": {
+            "start": "TITLE",
+            "end": "DAFTAR PUSTAKA",
+            "min_pages": 8,
+            "max_pages": 15,
+            "numbering": "arabic",
+            "position": "top_right",
+        },
+
+        "attachment": {
+            "start": "LAMPIRAN",
+            "numbering": "arabic",
+            "position": "top_right",
+        },
+
+        "paragraph": {
+            "line_spacing": 1.15,
+            "alignment": "justify",
+        },
+
+        "first_page_special": {
+            "author_font_size": 10.0,
+            "abstract_font_size": 11.0,
+            "line_spacing": 1.0,
+        },
+    },
+}

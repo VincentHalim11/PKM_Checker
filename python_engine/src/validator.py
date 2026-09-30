@@ -4,7 +4,7 @@ import pymupdf
 from statistics import median
 
 from font_checker import extract_fonts, normalize_font_name
-from font_size_checker import extract_font_sizes_detailed, is_expected_size
+from font_size_checker import evaluate_font_sizes
 from filters import is_page_number_text
 from line_spacing_checker import evaluate as evaluate_line_spacing
 from page_number_analyzer import evaluate as evaluate_page_number
@@ -15,6 +15,7 @@ from rules import (
     MARGIN,
     FONT,
     PAGE_NUMBER,
+    SCHEMES,
 )
 
 
@@ -40,10 +41,9 @@ def points_to_cm(pt):
 # DOCUMENT STRUCTURE
 # ============================================================
 
-def analyze_document_structure(pdf_path):
-    """Mendapatkan struktur dokumen berdasarkan section_analyzer."""
+def analyze_document_structure(pdf_path, scheme):
     pages = scan_pages(pdf_path)
-    structure = analyze_structure(pages)
+    structure = analyze_structure(pages, scheme)
     return pages, structure
 
 
@@ -127,42 +127,55 @@ def check_font(pdf_path):
 # FONT SIZE
 # ============================================================
 
-def check_font_size(pdf_path):
-    sizes, caption_sizes = extract_font_sizes_detailed(pdf_path)
+def _describe_allowed(allowed):
+    """Ringkasan aturan ukuran font untuk pesan."""
+    def fmt(sizes):
+        return "/".join(f"{x:g}" for x in sorted(sizes))
+    parts = [f"isi {fmt(allowed['body'])} pt"]
+    if allowed["title"] != allowed["body"]:
+        parts.append(f"judul/penulis {fmt(allowed['title'])} pt")
+    if allowed["abstract"] != allowed["body"]:
+        parts.append(f"abstrak {fmt(allowed['abstract'])} pt")
+    parts.append(f"caption {fmt(allowed['caption'])} pt")
+    return ", ".join(parts)
 
-    invalid_sizes = [
-        {"size": size, "count": count}
-        for size, count in sizes.items()
-        if not is_expected_size(size)
-    ]
 
-    invalid_captions = [
-        {"size": size, "count": count}
-        for size, count in caption_sizes.items()
-        if not is_expected_size(size)
-    ]
+def check_font_size(pdf_path, scheme="GFT"):
+    r = evaluate_font_sizes(pdf_path, scheme)
+    rule_text = _describe_allowed(r["allowed"])
 
-    # Aturan (konfirmasi staff): caption Tabel/Gambar juga WAJIB 12 pt.
-    if invalid_sizes or invalid_captions:
+    if r["invalid"] or r["caption_invalid"]:
         return {
             "status": "FAIL",
-            "message": (
-                f"Ditemukan ukuran font selain "
-                f"{FONT['size_pt']:.2f} pt."
-            ),
-            "details": invalid_sizes,
-            "caption_details": invalid_captions,
+            "message": f"Ukuran font tidak sesuai aturan ({rule_text}).",
+            "details": r["invalid"],
+            "caption_details": r["caption_invalid"],
         }
 
     return {
         "status": "PASS",
-        "message": (
-            f"Semua ukuran font sesuai "
-            f"{FONT['size_pt']:.2f} pt."
-        ),
+        "message": f"Ukuran font sesuai aturan ({rule_text}).",
         "details": [],
         "caption_details": [],
     }
+
+
+def _print_size_items(items):
+    kind_label = {
+        "body": "teks isi", "title": "judul/penulis", "abstract": "abstrak",
+        "abstract_heading": "judul abstrak", "caption": "caption",
+        "source": "baris Sumber", "table": "isi tabel",
+    }
+    for item in items:
+        pages = item.get("pages", [])
+        pages_txt = ", ".join(str(p) for p in pages[:12]) + (" ..." if len(pages) > 12 else "")
+        print(
+            f"- {item['size']:.2f} pt "
+            f"({item['count']} kali, {kind_label.get(item.get('kind'), item.get('kind'))}) "
+            f"hal. {pages_txt}"
+        )
+        for sample in item.get("samples", []):
+            print(f"    contoh: \"{sample}\"")
 
 
 # ============================================================
@@ -462,15 +475,57 @@ def check_margins(pdf_path):
 # STRUKTUR: HALAMAN AWAL, BAGIAN INTI, NOMOR HALAMAN
 # ============================================================
 
-MAX_CORE_PAGES = 10
+# MAX_CORE_PAGES = 10
 
 RE_FORBIDDEN_FRONT = re.compile(
     r"^(ABSTRAK|RINGKASAN|HALAMAN PENGESAHAN|LEMBAR PENGESAHAN)\.?$"
 )
 
 
-def check_front_matter(pages, structure):
+def check_front_matter_ai(pages, structure):
+    """PKM-AI: tanpa sampul/pengesahan/Daftar Isi; halaman judul memuat Abstrak dan Abstract."""
+    problems = []
+
+    if structure.get("daftar_isi"):
+        problems.append(
+            f"Naskah PKM-AI tidak boleh memuat Daftar Isi (ditemukan di hal. {structure['daftar_isi']})"
+        )
+
+    limit = structure.get("daftar_pustaka") or len(pages) + 1
+    for p in pages:
+        if p["no"] >= limit:
+            continue
+        for up, _first, raw in p["lines"]:
+            if re.match(r"^(HALAMAN|LEMBAR) PENGESAHAN\.?$", up):
+                problems.append(f"halaman {p['no']} memuat judul \"{raw}\"")
+
+    if problems:
+        return {"status": "FAIL", "message": "; ".join(problems), "details": problems}
+
+    head = [p for p in pages if p["no"] <= 3]
+    has_id = any(up == "ABSTRAK" for p in head for up, _f, _r in p["lines"])
+    has_en = any(up == "ABSTRACT" for p in head for up, _f, _r in p["lines"])
+
+    if not (has_id and has_en):
+        missing = [n for n, ok in (("ABSTRAK", has_id), ("ABSTRACT", has_en)) if not ok]
+        return {
+            "status": "REVIEW",
+            "message": f"Judul {' dan '.join(missing)} tidak ditemukan di 3 halaman pertama.",
+            "details": missing,
+        }
+
+    return {
+        "status": "PASS",
+        "message": "Tanpa sampul/pengesahan/Daftar Isi; Abstrak dan Abstract ditemukan.",
+        "details": [],
+    }
+
+
+def check_front_matter(pages, structure, scheme="GFT"):
     """Proposal tidak boleh punya sampul, pengesahan, ringkasan, atau abstrak."""
+    if scheme == "AI":
+        return check_front_matter_ai(pages, structure)
+
     di = structure.get("daftar_isi")
     bab1 = structure.get("bab1")
 
@@ -511,49 +566,86 @@ def check_front_matter(pages, structure):
     }
 
 
-def check_core_pages(structure):
-    """Bagian inti (Bab 1 sampai Daftar Pustaka) maksimum 10 halaman."""
-    bab1 = structure.get("bab1")
+def check_core_pages(structure, scheme):
+    """
+    Memeriksa jumlah halaman bagian inti berdasarkan skema PKM.
+    """
+
+    if scheme not in SCHEMES:
+        return {
+            "status": "REVIEW",
+            "message": f"Skema PKM '{scheme}' tidak dikenali.",
+            "details": {},
+        }
+
+    core_rules = SCHEMES[scheme]["core"]
+
+    min_core_pages = core_rules["min_pages"]
+    max_core_pages = core_rules["max_pages"]
+
+    start = structure.get("core_start") or structure.get("bab1")
     lo = structure.get("core_lo")
     hi = structure.get("core_hi")
 
-    if not bab1 or not lo or not hi:
+    if not start or not lo or not hi:
         return {
             "status": "REVIEW",
             "message": (
                 "Bagian inti tidak dapat ditentukan "
-                "(Bab 1 atau Daftar Pustaka tidak ditemukan)."
+                "(awal atau akhir bagian inti tidak ditemukan)."
             ),
             "details": {},
         }
 
-    n_min = lo - bab1 + 1
-    n_max = hi - bab1 + 1
-    details = {"min_pages": n_min, "max_pages": n_max}
+    n_min = lo - start + 1     # kemungkinan paling sedikit
+    n_max = hi - start + 1     # kemungkinan paling banyak
 
-    if n_min > MAX_CORE_PAGES:
+    details = {
+        "min_pages": n_min,
+        "max_pages": n_max,
+        "rule_min": min_core_pages,
+        "rule_max": max_core_pages,
+        "physical_start": start,
+        "scheme": scheme,
+    }
+
+    if n_min > max_core_pages:
         return {
             "status": "FAIL",
             "message": (
-                f"Bagian inti {n_min} halaman (hal. fisik {bab1}-{lo}), "
-                f"melebihi maksimum {MAX_CORE_PAGES}."
+                f"Bagian inti {n_min} halaman (hal. fisik {start}-{lo}), "
+                f"melebihi maksimum {max_core_pages}."
             ),
             "details": details,
         }
 
-    if n_max > MAX_CORE_PAGES:
+    if n_max < min_core_pages:
         return {
-            "status": "REVIEW",
+            "status": "FAIL",
             "message": (
-                f"Bagian inti {n_min}-{n_max} halaman; batas akhir belum pasti "
-                f"(maksimum {MAX_CORE_PAGES})."
+                f"Bagian inti {n_max} halaman (hal. fisik {start}-{hi}), "
+                f"kurang dari minimum {min_core_pages}."
+            ),
+            "details": details,
+        }
+
+    if n_min >= min_core_pages and n_max <= max_core_pages:
+        shown = f"{n_max}" if n_min == n_max else f"{n_min}-{n_max}"
+        return {
+            "status": "PASS",
+            "message": (
+                f"Bagian inti {shown} halaman, sesuai batas "
+                f"{min_core_pages}-{max_core_pages}."
             ),
             "details": details,
         }
 
     return {
-        "status": "PASS",
-        "message": f"Bagian inti {n_max} halaman (maksimum {MAX_CORE_PAGES}).",
+        "status": "REVIEW",
+        "message": (
+            f"Bagian inti {n_min}-{n_max} halaman; akhirnya belum pasti "
+            f"(batas {min_core_pages}-{max_core_pages})."
+        ),
         "details": details,
     }
 
@@ -599,7 +691,7 @@ def check_page_number_coverage(page_number_result, structure):
 
 def print_document_structure(structure):
     
-    pages, structure = analyze_document_structure(pdf_path)
+    pages, structure = analyze_document_structure(pdf_path,scheme)
 
     print()
     print("-" * 70)
@@ -709,7 +801,7 @@ def print_margin_result(result):
 # MAIN VALIDATOR
 # ============================================================
 
-def validate_pdf(pdf_path):
+def validate_pdf(pdf_path, scheme):
 
     doc = pymupdf.open(pdf_path)
 
@@ -726,7 +818,7 @@ def validate_pdf(pdf_path):
     # DOCUMENT STRUCTURE
     # --------------------------------------------------------
 
-    pages, structure = analyze_document_structure(pdf_path)
+    pages, structure = analyze_document_structure(pdf_path,scheme)
 
     # --------------------------------------------------------
     # PAGE SIZE
@@ -744,7 +836,7 @@ def validate_pdf(pdf_path):
     # FONT SIZE
     # --------------------------------------------------------
 
-    font_size_result = check_font_size(pdf_path)
+    font_size_result = check_font_size(pdf_path, scheme)
 
     # --------------------------------------------------------
     # MARGIN
@@ -757,8 +849,9 @@ def validate_pdf(pdf_path):
     # --------------------------------------------------------
 
     core_range = None
-    if structure.get("bab1") and structure.get("core_hi"):
-        core_range = (structure["bab1"], structure["core_hi"])
+    core_start = structure.get("core_start") or structure.get("bab1")
+    if core_start and structure.get("core_hi"):
+        core_range = (core_start, structure["core_hi"])
 
     line_spacing_result = check_line_spacing(pdf_path, core_range)
 
@@ -768,8 +861,8 @@ def validate_pdf(pdf_path):
 
     page_number_result = check_page_number(pdf_path)
 
-    front_result = check_front_matter(pages, structure)
-    core_result = check_core_pages(structure)
+    front_result = check_front_matter(pages, structure, scheme)
+    core_result = check_core_pages(structure, scheme)
     coverage_result = check_page_number_coverage(page_number_result, structure)
 
     # ========================================================
@@ -803,7 +896,7 @@ def validate_pdf(pdf_path):
     if font_size_result["status"] == "PASS":
         print(
             f"✅ Font Size       : "
-            f"{FONT['size_pt']:.2f} pt"
+            f"{font_size_result['message']}"
         )
     elif font_size_result["status"] == "REVIEW":
         print(
@@ -813,8 +906,7 @@ def validate_pdf(pdf_path):
     else:
         print(
             f"❌ Font Size       : "
-            f"Ditemukan ukuran selain "
-            f"{FONT['size_pt']:.2f} pt"
+            f"{font_size_result['message']}"
         )
 
     # Margin
@@ -857,11 +949,7 @@ def validate_pdf(pdf_path):
         print("UKURAN FONT TIDAK SESUAI")
         print("-" * 70)
 
-        for item in font_size_result["details"]:
-            print(
-                f"- {item['size']:.2f} pt "
-                f"({item['count']} kali)"
-            )
+        _print_size_items(font_size_result["details"])
 
     if font_size_result.get("caption_details"):
 
@@ -870,11 +958,7 @@ def validate_pdf(pdf_path):
         print("UKURAN FONT CAPTION TABEL/GAMBAR TIDAK SESUAI")
         print("-" * 70)
 
-        for item in font_size_result["caption_details"]:
-            print(
-                f"- {item['size']:.2f} pt "
-                f"({item['count']} kali)"
-            )
+        _print_size_items(font_size_result["caption_details"])
 
     # ========================================================
     # DETAILS FONT
@@ -942,14 +1026,36 @@ def validate_pdf(pdf_path):
 
 if __name__ == "__main__":
 
-    if len(sys.argv) > 1:
-        pdf_path = sys.argv[1]
-
-    else:
+    if len(sys.argv) < 2:
         pdf_path = input(
             "\nMasukkan path PDF: "
         ).strip()
 
+        scheme = input(
+            "Masukkan skema PKM (GFT/AI): "
+        ).strip().upper()
+
+    else:
+        pdf_path = sys.argv[1]
+
+        scheme = "GFT"
+
+        if "--scheme" in sys.argv:
+            index = sys.argv.index("--scheme")
+
+            if index + 1 < len(sys.argv):
+                scheme = sys.argv[index + 1].upper()
+
     pdf_path = pdf_path.strip('"')
 
-    validate_pdf(pdf_path)
+    if scheme not in SCHEMES:
+        print()
+        print(
+            f"❌ Skema PKM '{scheme}' tidak tersedia."
+        )
+        print(
+            f"Skema tersedia: {', '.join(SCHEMES.keys())}"
+        )
+        sys.exit(1)
+
+    validate_pdf(pdf_path, scheme)

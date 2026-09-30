@@ -58,10 +58,16 @@ def find_candidates(page):
             if st is None:
                 continue
             x0, y0, x1, y1 = line["bbox"]
-            yc = (y0 + y1) / 2
-            if yc < zone:
+            # yc = (y0 + y1) / 2
+            # if yc < zone:
+            #     vpos = "atas"
+            # elif yc > h - zone:
+            #     vpos = "bawah"
+            # else:
+            #     continue
+            if y0 <= zone:
                 vpos = "atas"
-            elif yc > h - zone:
+            elif y1 >= h - zone:
                 vpos = "bawah"
             else:
                 continue
