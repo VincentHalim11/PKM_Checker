@@ -5,13 +5,14 @@ from collections import Counter
 import pymupdf
 
 from filters import is_symbol_only
+from rules import FONT
 
 
 # ============================================================
 # FONT RULE
 # ============================================================
 
-EXPECTED_FONT = "Times New Roman"
+EXPECTED_FONT = FONT["family"]   # sumber: rules.py
 
 
 # ============================================================

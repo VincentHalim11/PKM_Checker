@@ -4,11 +4,11 @@ from collections import Counter
 
 import pymupdf
 
-from rules import PARAGRAPH
+from rules import FONT, PARAGRAPH
 
 # ---------- Parameter (BUKAN aturan resmi PKM) ----------
-BODY_SIZE_MIN = 11.5          # kandidat body text: ukuran ~12 pt
-BODY_SIZE_MAX = 12.5
+BODY_SIZE_MIN = FONT["size_pt"] - 0.5   # kandidat body text: ukuran font isi (rules.py) -0.5
+BODY_SIZE_MAX = FONT["size_pt"] + 0.5
 DIST_MIN = 5.0                # filter jarak baseline antar baris (pt)
 DIST_MAX = 40.0
 TNR_LINE_HEIGHT_FACTOR = 1.149  # HEURISTIK: tinggi baris alami TNR / ukuran font

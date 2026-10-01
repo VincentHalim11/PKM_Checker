@@ -1,36 +1,21 @@
-"""
-section_analyzer.py - ANALYZER segmentasi bagian (BELUM memberi PASS/FAIL).
-
-Menebak batas bagian proposal dari PENANDA TEKS, lalu melaporkan buktinya:
-  sebelum Daftar Isi | Daftar Isi/awal | inti (Bab 1 - Daftar Pustaka) | lampiran
-
-Yang RESMI (Panduan PKM 2026, bagian proposal):
-  - Daftar Isi bernomor Romawi (mulai i), lalu inti bernomor Arab (mulai 1
-    di Bab 1 Pendahuluan), lalu lampiran.
-  - Inti = Bab 1 Pendahuluan sampai Daftar Pustaka, maksimum 10 halaman.
-  - Tidak ada halaman sampul dan pengesahan pada berkas.
-Yang HEURISTIK (parameter teknis saya, bukan panduan):
-  - penanda = baris yang persis "DAFTAR ISI", "BAB 1/I [PENDAHULUAN]",
-    "DAFTAR PUSTAKA", atau "LAMPIRAN [n]." di awal blok teks
-  - halaman Daftar Isi dikenali dari baris bertitik pengarah (>= 3 baris)
-  - halaman "tanpa teks terbaca" = <= 50 karakter selain nomor halaman
-
-Akhir bagian inti dilaporkan sebagai RENTANG (minimum-maksimum), bukan satu
-angka, karena halaman scan tidak punya teks yang bisa dibaca.
-
-Pakai: python section_analyzer.py "path.pdf"
-"""
 import re
+import shutil
 import sys
 
 import pymupdf
 
 from page_number_analyzer import find_candidates
+from rules import MAIN_SECTION, get_scheme, is_article_scheme
+
+# OCR dipakai hanya sebagai fallback untuk halaman kandidat yang scan-like.
+# Prioritaskan Tesseract dari PATH; pada Windows tanpa PATH, gunakan lokasi installer UB Mannheim.
+TESSERACT_PATH = shutil.which("tesseract") or r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+OCR_SCALE = 2
 
 LOW_TEXT_CHARS = 50     # HEURISTIK
 TOC_DOT_LINES = 3       # HEURISTIK
 MAX_HEADING_LEN = 100   # HEURISTIK
-IMAGE_PAGE_RATIO = 0.4  # HEURISTIK: gambar >= 50% luas halaman + hampir tanpa teks = halaman scan
+IMAGE_PAGE_RATIO = 0.4  # HEURISTIK: gambar >= 40% luas halaman + hampir tanpa teks = kandidat scan
 
 DOT_LEADER = re.compile(r"(\.\s*){5,}")
 NUM_ONLY = re.compile(r"\d{1,3}|[ivxIVX]{1,6}")
@@ -105,6 +90,58 @@ def is_lampiran_heading(up, first):
     return bool(RE_LAMPIRAN_NUM.match(up) or (first and RE_LAMPIRAN_BARE.match(up)))
 
 
+def is_first_lampiran_heading(up, first):
+    """Penanda khusus AWAL Lampiran: LAMPIRAN atau Lampiran 1, bukan Lampiran 2+."""
+    return bool((first and RE_LAMPIRAN_BARE.match(up)) or re.match(r"^LAMPIRAN\s*1\s*[.:]?", up))
+
+
+def _ocr_page_text(pdf_path, page_no):
+    """OCR satu halaman fisik. Dipanggil hanya untuk kandidat scan-like."""
+    try:
+        import pytesseract
+        from PIL import Image
+    except ImportError:
+        return "", "pytesseract/Pillow tidak tersedia"
+
+    try:
+        pytesseract.pytesseract.tesseract_cmd = TESSERACT_PATH
+        doc = pymupdf.open(pdf_path)
+        try:
+            page = doc[page_no - 1]
+            pix = page.get_pixmap(
+                matrix=pymupdf.Matrix(OCR_SCALE, OCR_SCALE),
+                alpha=False,
+            )
+            img = Image.frombytes(
+                "RGB",
+                [pix.width, pix.height],
+                pix.samples,
+            )
+            text = pytesseract.image_to_string(img, lang="eng")
+            return text, None
+        finally:
+            doc.close()
+    except Exception as exc:
+        return "", f"OCR gagal di hal. {page_no}: {exc}"
+
+
+def _ocr_is_lampiran_start(text):
+    """Deteksi awal Lampiran dari hasil OCR tanpa menganggap Lampiran 2/3/4 sebagai awal."""
+    lines = [
+        re.sub(r"\s+", " ", line).strip().upper()
+        for line in text.splitlines()
+        if line.strip()
+    ]
+
+    has_bare_lampiran = any(line == "LAMPIRAN" for line in lines)
+    has_lampiran_1 = any(
+        re.match(r"^LAMPIRAN\s*1\s*[:.]?", line)
+        for line in lines
+    )
+
+    return has_bare_lampiran or has_lampiran_1
+
+
 def _first_page(pages, start, matcher):
     """(halaman, teks) pertama >= start yang punya baris judul cocok
     dan bukan halaman Daftar Isi (titik pengarah)."""
@@ -119,20 +156,61 @@ def _first_page(pages, start, matcher):
     return None, None
 
 
-def _finish_structure(pages, found, core_start, di, scheme):
+def _finish_structure(pages, found, core_start, di, scheme, pdf_path=None):
     """Bagian bersama GFT dan AI: Daftar Pustaka, Lampiran, rentang inti, jenis halaman."""
     n = len(pages)
 
     dp = lamp = None
     lamp_txt = None
+    lamp_source = None
+    ocr_checked_pages = []
+    ocr_errors = []
+
     if core_start:
-        dp, _ = _first_page(pages, core_start,
-                            lambda up, first: bool(RE_DAFTAR_PUSTAKA.match(up)))
-        lamp, lamp_txt = _first_page(pages, (dp if dp else core_start + 1),
-                                     is_lampiran_heading)
+        dp, _ = _first_page(
+            pages,
+            core_start,
+            lambda up, first: bool(RE_DAFTAR_PUSTAKA.match(up)),
+        )
+
+        # Prioritas 1: penanda teks biasa. Ini cepat dan tidak membutuhkan OCR.
+        lamp, lamp_txt = _first_page(
+            pages,
+            (dp if dp else core_start + 1),
+            is_first_lampiran_heading,
+        )
+        if lamp is not None:
+            lamp_source = "teks"
+
+        # Prioritas 2: OCR hanya untuk halaman scan-like setelah Daftar Pustaka.
+        # Jangan gunakan scan-like sebagai bukti Lampiran; scan-like hanya pemicu OCR.
+        if lamp is None and pdf_path and dp:
+            for p in pages:
+                if p["no"] <= dp or p["toc_like"] or not p["scan_like"]:
+                    continue
+
+                ocr_checked_pages.append(p["no"])
+                p["ocr_checked"] = True
+                ocr_text, ocr_error = _ocr_page_text(pdf_path, p["no"])
+                if ocr_error:
+                    ocr_errors.append(ocr_error)
+                    continue
+
+                if _ocr_is_lampiran_start(ocr_text):
+                    lamp = p["no"]
+                    lamp_txt = "LAMPIRAN (OCR)"
+                    lamp_source = "OCR"
+                    p["ocr_lampiran"] = True
+                    p["ocr_marker"] = "LAMPIRAN / Lampiran 1"
+                    break
+                p["ocr_lampiran"] = False
+
     found["daftar_pustaka"] = dp
     found["lampiran"] = lamp
     found["lampiran_text"] = lamp_txt
+    found["lampiran_source"] = lamp_source
+    found["ocr_checked_pages"] = ocr_checked_pages
+    found["ocr_errors"] = ocr_errors
     found["core_start"] = core_start
 
     low_pages = [p["no"] for p in pages if p["low_text"]]
@@ -142,28 +220,20 @@ def _finish_structure(pages, found, core_start, di, scheme):
     note = None
     if core_start and dp:
         if lamp and lamp > dp:
+            # Ini batas yang kita inginkan: halaman tepat sebelum Lampiran adalah
+            # halaman terakhir Bagian Inti. Tidak lagi memakai first_scan sebagai cut-off.
             upper = lamp - 1
+            lo = hi = upper
         elif lamp == dp:
             upper = dp
+            lo = hi = dp
             note = "Lampiran mulai di halaman yang sama dengan Daftar Pustaka"
         else:
-            upper = n
-        first_low = next((q for q in low_pages if q > dp), None)
-        lower = (first_low - 1) if first_low else n
-        hi = upper
-        lo = max(dp, min(lower, upper))
-
-        # Halaman scan (gambar penuh, nyaris tanpa teks) tepat setelah halaman bertulis
-        # bukan lanjutan Daftar Pustaka (yang berupa teks) -> inti paling jauh berakhir
-        # sebelum halaman scan pertama. Ini mempersempit rentang, sering menjadi pasti.
-        first_scan = next(
-            (p["no"] for p in pages if p["no"] > dp and p["scan_like"]), None
-        )
-        if first_scan is not None:
-            hi = max(dp, min(hi, first_scan - 1))
-            lo = min(lo, hi)
-            if note is None and hi != upper:
-                note = f"Halaman scan mulai di hal. {first_scan}; dianggap lampiran"
+            # Daftar Pustaka ditemukan, tetapi awal Lampiran belum dapat dipastikan.
+            # Laporkan rentang agar validator tidak mengarang angka pasti.
+            lo = dp
+            hi = n
+            note = "Awal Lampiran tidak ditemukan; akhir Bagian Inti belum dapat dipastikan"
     elif core_start and not dp:
         note = "Daftar Pustaka tidak ditemukan; akhir inti tidak dapat ditentukan"
     found["core_lo"], found["core_hi"], found["note"] = lo, hi, note
@@ -196,12 +266,16 @@ def _finish_structure(pages, found, core_start, di, scheme):
                 continue
             if RE_DAFTAR_ISI.match(up):
                 marks.append("DAFTAR ISI")
-            elif scheme != "AI" and not p["toc_like"] and RE_BAB1.match(up):
+            elif not is_article_scheme(scheme) and not p["toc_like"] and RE_BAB1.match(up):
                 marks.append(raw)
             elif not p["toc_like"] and RE_DAFTAR_PUSTAKA.match(up):
                 marks.append("DAFTAR PUSTAKA")
             elif not p["toc_like"] and is_lampiran_heading(up, first):
                 marks.append(raw[:40])
+        if p.get("ocr_lampiran"):
+            marks.append("LAMPIRAN (OCR)")
+        if p.get("ocr_checked"):
+            marks.append("OCR diperiksa")
         if p["low_text"]:
             marks.append("TANPA TEKS")
         p["marks"] = marks
@@ -215,7 +289,7 @@ def _find_daftar_isi(pages):
     return None
 
 
-def _analyze_gft(pages):
+def _analyze_gft(pages, pdf_path=None):
     found = {}
     di = _find_daftar_isi(pages)
     found["daftar_isi"] = di
@@ -224,28 +298,32 @@ def _analyze_gft(pages):
                                       lambda up, first: bool(RE_BAB1.match(up)))
     found["bab1"] = core_start
     found["bab1_text"] = bab_txt
-    return _finish_structure(pages, found, core_start, di, "GFT")
+    return _finish_structure(pages, found, core_start, di, "GFT", pdf_path)
 
 
-def _analyze_ai(pages):
+def _analyze_ai(pages, pdf_path=None):
     """PKM-AI: tanpa Daftar Isi; bagian inti dimulai dari halaman judul (hal. 1)."""
     found = {}
     # Dicatat apa adanya: untuk AI, Daftar Isi TIDAK BOLEH ada (dinilai di validator).
     found["daftar_isi"] = _find_daftar_isi(pages)
     found["bab1"] = None
     found["bab1_text"] = None
-    return _finish_structure(pages, found, 1, None, "AI")
+    return _finish_structure(pages, found, 1, None, "AI", pdf_path)
 
 
-def analyze_structure(pages, scheme="GFT"):
-    if str(scheme).upper() == "AI":
-        return _analyze_ai(pages)
-    return _analyze_gft(pages)
+def analyze_structure(pages, scheme="GFT", pdf_path=None):
+    if is_article_scheme(scheme):
+        return _analyze_ai(pages, pdf_path)
+    return _analyze_gft(pages, pdf_path)
 
 
 def report(pdf_path, scheme="GFT"):
+    scheme_key = str(scheme).upper()
+    core_max = get_scheme(scheme_key).get("core", {}).get("max_pages")
+    if core_max is None:
+        core_max = MAIN_SECTION["maximum_core_pages"]
     pages = scan_pages(pdf_path)
-    f = analyze_structure(pages, scheme)
+    f = analyze_structure(pages, scheme, pdf_path)
     n = len(pages)
     print("=" * 84)
     print(f"File : {pdf_path}   ({n} halaman)")
@@ -263,14 +341,14 @@ def report(pdf_path, scheme="GFT"):
     print(f"Daftar Isi                   : {'hal ' + str(f['daftar_isi']) if f['daftar_isi'] else 'tidak ditemukan'}")
     print(f"Bab 1 Pendahuluan            : {'hal ' + str(f['bab1']) + '  (' + f['bab1_text'] + ')' if f['bab1'] else 'tidak ditemukan'}")
     print(f"Daftar Pustaka               : {'hal ' + str(f['daftar_pustaka']) if f['daftar_pustaka'] else 'tidak ditemukan'}")
-    print(f"Lampiran pertama             : {'hal ' + str(f['lampiran']) + '  (' + f['lampiran_text'] + ')' if f['lampiran'] else 'tidak ditemukan'}")
+    print(f"Lampiran pertama             : {'hal ' + str(f['lampiran']) + '  (' + str(f['lampiran_text']) + ')' if f['lampiran'] else 'tidak ditemukan'}" + (f"  [sumber: {f['lampiran_source']}]" if f.get("lampiran_source") else ""))
     if f["core_start"] and f["core_lo"]:
         a, lo, hi = f["core_start"], f["core_lo"], f["core_hi"]
         if lo == hi:
-            print(f"Bagian inti                  : hal {a}-{hi} = {hi - a + 1} halaman  (panduan: maksimum 10)")
+            print(f"Bagian inti                  : hal {a}-{hi} = {hi - a + 1} halaman  (scheme {scheme_key}: maksimum {core_max})")
         else:
             print(f"Bagian inti                  : berakhir di hal {lo}-{hi} "
-                  f"-> {lo - a + 1} sampai {hi - a + 1} halaman  (panduan: maksimum 10)")
+                  f"-> {lo - a + 1} sampai {hi - a + 1} halaman  (scheme {scheme_key}: maksimum {core_max})")
     elif f["core_start"]:
         s = f["span_to_lampiran"]
         print(f"Bagian inti                  : TIDAK DAPAT DITENTUKAN ({f['note']})")
@@ -282,6 +360,10 @@ def report(pdf_path, scheme="GFT"):
         print("Bagian inti                  : TIDAK DAPAT DITENTUKAN (Bab 1 tidak ditemukan)")
     if f["note"] and f["core_lo"]:
         print(f"Catatan                      : {f['note']}")
+    if f.get("ocr_checked_pages"):
+        print("Halaman kandidat yang di-OCR : " + str(f["ocr_checked_pages"]))
+    if f.get("ocr_errors"):
+        print("Peringatan OCR               : " + str(f["ocr_errors"]))
     low = f["low_text_pages"]
     print(f"Halaman tanpa teks terbaca   : {low if low else '-'}")
     for kind_name in ("sebelum Daftar Isi", "Daftar Isi/awal"):

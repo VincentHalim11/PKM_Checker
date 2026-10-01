@@ -22,7 +22,10 @@ from collections import Counter
 
 import pymupdf
 
-ZONE_CM = 3.0                       # HEURISTIK
+from rules import MARGIN
+
+# Zona nomor halaman = area margin atas/bawah (sumber: rules.py)
+ZONE_CM = min(MARGIN["top_cm"], MARGIN["bottom_cm"])
 PT_PER_CM = 72 / 2.54
 ARABIC = re.compile(r"^\d{1,3}$")
 ROMAN = re.compile(r"^(?=[ivxlcdm]+$)m{0,3}(cm|cd|d?c{0,3})(xc|xl|l?x{0,3})(ix|iv|v?i{0,3})$",

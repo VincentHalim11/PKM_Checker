@@ -1,5 +1,16 @@
+from copy import deepcopy
+
+
 # ============================================================
 # PKM 2026 - FORMAT RULES
+# ============================================================
+#
+# Struktur aturan:
+# - Aturan umum disimpan sebagai default.
+# - Setiap skema tetap memiliki profil sendiri.
+# - Skema yang memiliki format dasar sama memakai base profile
+#   lalu dapat dioverride secara individual.
+#
 # ============================================================
 
 # ------------------------------------------------------------
@@ -24,9 +35,8 @@ MARGIN = {
     "top_cm": 3.0,
     "bottom_cm": 3.0,
 
-    # Toleransi deteksi otomatis
-    # Ini bukan aturan PKM, tetapi toleransi teknis
-    # agar posisi teks PDF tidak terlalu sensitif.
+    # Toleransi deteksi otomatis.
+    # Ini bukan aturan PKM, tetapi toleransi teknis.
     "tolerance_cm": 0.45,
 }
 
@@ -59,11 +69,11 @@ PAGE_NUMBER = {
     "font_family": "Times New Roman",
     "font_size_pt": 12.0,
 
-    # Daftar isi dan bagian awal:
+    # Daftar isi / bagian awal untuk skema yang memiliki Daftar Isi.
     "preliminary_style": "roman",
     "preliminary_position": "bottom_right",
 
-    # Bagian inti dan lampiran:
+    # Bagian inti dan lampiran.
     "main_style": "arabic",
     "main_position": "top_right",
 }
@@ -72,6 +82,8 @@ PAGE_NUMBER = {
 # ------------------------------------------------------------
 # MAIN SECTION
 # ------------------------------------------------------------
+# Default maksimum untuk proposal pendanaan.
+# Tetap dipertahankan untuk kompatibilitas dengan kode lama.
 
 MAIN_SECTION = {
     "maximum_core_pages": 10,
@@ -79,77 +91,88 @@ MAIN_SECTION = {
     "ends_at": "DAFTAR PUSTAKA",
 }
 
+
 # ============================================================
-# PKM 2026 - SCHEME PROFILES
+# BASE SCHEME PROFILES
+# ============================================================
+
+# Semua skema proposal pendanaan memiliki aturan FORMAT DASAR
+# yang sama pada Panduan PKM 2026.
+# Masing-masing skema tetap dibuat sebagai profil terpisah
+# sehingga nanti dapat memiliki override sendiri.
+
+PROPOSAL_BASE = {
+    "structure": "toc_core_attachment",
+
+    "preliminary": {
+        "has_toc": True,
+        "numbering": "roman",
+        "position": "bottom_right",
+    },
+
+    "core": {
+        "start": "BAB 1",
+        "end": "DAFTAR PUSTAKA",
+        # 0 = tidak ada minimum yang ditetapkan secara eksplisit.
+        # Maksimum proposal pendanaan = 10.
+        "min_pages": 0,
+        "max_pages": 10,
+        "numbering": "arabic",
+        "position": "top_right",
+    },
+
+    "attachment": {
+        "start": "LAMPIRAN",
+        "numbering": "arabic",
+        "position": "top_right",
+    },
+
+    "paragraph": {
+        "line_spacing": 1.15,
+        "alignment": "justify",
+    },
+
+    # Untuk proposal, panduan tidak memberi aturan caption khusus.
+    # Nilai 12 pt mengikuti aturan font umum proposal.
+    "caption_font_size": 12.0,
+}
+
+
+# ============================================================
+# SCHEME PROFILES
 # ============================================================
 
 SCHEMES = {
 
-    "GENERAL": {
-        "structure": "toc_core_attachment",
+    # --------------------------------------------------------
+    # GENERAL
+    # --------------------------------------------------------
+    # Profil kompatibilitas / default untuk proposal pendanaan.
+    "GENERAL": deepcopy(PROPOSAL_BASE),
 
-        "preliminary": {
-            "has_toc": True,
-            "numbering": "roman",
-            "position": "bottom_right",
-        },
-
-        "core": {
-            "start": "BAB 1",
-            "end": "DAFTAR PUSTAKA",
-            "min_pages": 0,
-            "max_pages": 10,
-            "numbering": "arabic",
-            "position": "top_right",
-        },
-
-        "attachment": {
-            "start": "LAMPIRAN",
-            "numbering": "arabic",
-            "position": "top_right",
-        },
-
-        "paragraph": {
-            "line_spacing": 1.15,
-            "alignment": "justify",
-        },
-    },
-
+    # --------------------------------------------------------
+    # PKM-GFT
+    # --------------------------------------------------------
     "GFT": {
-        "structure": "toc_core_attachment",
-
-        "preliminary": {
-            "has_toc": True,
-            "numbering": "roman",
-            "position": "bottom_right",
-        },
-
+        **deepcopy(PROPOSAL_BASE),
         "core": {
-            "start": "BAB 1",
-            "end": "DAFTAR PUSTAKA",
+            **PROPOSAL_BASE["core"],
             "min_pages": 8,
             "max_pages": 15,
-            "numbering": "arabic",
-            "position": "top_right",
-        },
-
-        "attachment": {
-            "start": "LAMPIRAN",
-            "numbering": "arabic",
-            "position": "top_right",
-        },
-
-        "paragraph": {
-            "line_spacing": 1.15,
-            "alignment": "justify",
         },
     },
 
+    # --------------------------------------------------------
+    # PKM-AI
+    # --------------------------------------------------------
     "AI": {
         "structure": "article_core_attachment",
 
         "preliminary": {
             "has_toc": False,
+            # Tidak ada Daftar Isi pada PKM-AI, jadi tidak ada penomoran romawi.
+            "numbering": None,
+            "position": None,
         },
 
         "core": {
@@ -172,10 +195,58 @@ SCHEMES = {
             "alignment": "justify",
         },
 
+        # Aturan khusus gambar/tabel pada PKM-AI.
+        "caption_font_size": 11.0,
+
         "first_page_special": {
+            "title_font_size": 12.0,
             "author_font_size": 10.0,
             "abstract_font_size": 11.0,
+            "abstract_heading_font_size": 11.0,
             "line_spacing": 1.0,
         },
+        
+        "unspecified_font_sizes": [11.0, 12.0],
     },
 }
+
+
+# ============================================================
+# FUNDING SCHEMES
+# ============================================================
+# Delapan skema berikut memakai PROPOSAL_BASE sebagai default.
+# Masing-masing tetap memiliki entry sendiri di SCHEMES sehingga
+# dapat dioverride secara independen kapan saja.
+
+FUNDING_SCHEMES = (
+    "K",
+    "KC",
+    "KI",
+    "PI",
+    "PM",
+    "RE",
+    "RSH",
+    "VGK",
+)
+
+for _scheme_name in FUNDING_SCHEMES:
+    SCHEMES[_scheme_name] = deepcopy(PROPOSAL_BASE)
+
+
+del _scheme_name
+
+
+# ============================================================
+# HELPER AKSES SKEMA
+# ============================================================
+# Semua file lain sebaiknya memakai fungsi di bawah ini, bukan
+# membandingkan nama skema secara langsung (mis. scheme == "AI").
+
+def get_scheme(name):
+    """Profil skema; nama tidak dikenal -> profil GENERAL."""
+    return SCHEMES.get(str(name).upper(), SCHEMES["GENERAL"])
+
+
+def is_article_scheme(name):
+    """True bila skema berbentuk artikel (tanpa sampul, tanpa Daftar Isi)."""
+    return get_scheme(name).get("structure") == "article_core_attachment"

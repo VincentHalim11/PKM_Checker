@@ -4,13 +4,14 @@ from collections import Counter
 import pymupdf
 
 from filters import is_symbol_only, is_page_number_text, is_caption_text
+from rules import FONT, get_scheme, is_article_scheme
 
 
 # ============================================================
 # FONT SIZE RULE
 # ============================================================
 
-EXPECTED_FONT_SIZE = 12.0
+EXPECTED_FONT_SIZE = float(FONT["size_pt"])
 TOLERANCE = 0.1
 
 
@@ -161,14 +162,14 @@ def check_font_sizes(pdf_path: str) -> None:
         print("✅ PASS")
         print(
             "Semua ukuran font yang ditemukan "
-            "adalah 12 pt."
+            f"adalah {EXPECTED_FONT_SIZE:g} pt."
         )
 
     else:
 
         print("⚠ CHECK")
         print(
-            "Ditemukan ukuran font selain 12 pt:"
+            f"Ditemukan ukuran font selain {EXPECTED_FONT_SIZE:g} pt:"
         )
 
         for size in invalid_sizes:
@@ -219,42 +220,66 @@ def _norm(text):
 
 
 def _scheme_rules(scheme):
-    """Kumpulan ukuran yang diizinkan per jenis teks."""
-    try:
-        from rules import SCHEMES
-        cfg = SCHEMES.get(scheme, {})
-    except Exception:
-        cfg = {}
+    """
+    Kumpulan ukuran font yang diizinkan per jenis teks.
+    Semua nilai dibaca dari rules.py.
+    """
 
-    body = {EXPECTED_FONT_SIZE}
+    cfg = get_scheme(scheme)
 
-    if scheme == "AI":
-        special = cfg.get("first_page_special", {})
-        author = special.get("author_font_size", 10.0)
-        abstract = special.get("abstract_font_size", 11.0)
-        caption = cfg.get("caption_font_size", 11.0)
-        unspecified = set(cfg.get("unspecified_font_sizes", [11.0, 12.0]))
-        return {
-            "body": body,
-            "title": {author, EXPECTED_FONT_SIZE},
-            "abstract": {abstract},
-            "abstract_heading": {abstract, EXPECTED_FONT_SIZE},
-            "caption": {caption},
-            "source": unspecified,
-            "table": unspecified,
-        }
+    body_size = float(FONT["size_pt"])
 
-    caption = cfg.get("caption_font_size", EXPECTED_FONT_SIZE)
-    return {
-        "body": body,
-        "caption": {caption},
-        "title": body,
-        "abstract": body,
-        "abstract_heading": body,
-        "source": body,
-        "table": body,
+    caption_size = float(
+        cfg.get("caption_font_size", body_size)
+    )
+
+    allowed = {
+        "body": {body_size},
+        "title": {body_size},
+        "author": {body_size},
+        "abstract": {body_size},
+        "abstract_heading": {body_size},
+        "caption": {caption_size},
+        "source": {body_size},
+        "table": {body_size},
     }
 
+    # --------------------------------------------------------
+    # KHUSUS PKM-AI
+    # --------------------------------------------------------
+
+    if is_article_scheme(scheme):
+        special = cfg.get("first_page_special", {})
+
+        title_size = float(
+            special.get("title_font_size", body_size)
+        )
+        author_size = float(
+            special.get("author_font_size", body_size)
+        )
+        abstract_size = float(
+            special.get("abstract_font_size", body_size)
+        )
+        abstract_heading_size = float(
+            special.get("abstract_heading_font_size", body_size)
+        )
+
+        allowed.update({
+            "title": {title_size},
+            "author": {author_size},
+            "abstract": {abstract_size},
+            "abstract_heading": {abstract_heading_size},
+            "caption": {caption_size},
+        })
+
+        unspecified = set(
+            cfg.get("unspecified_font_sizes", [])
+        )
+
+        allowed["source"] = unspecified
+        allowed["table"] = unspecified
+
+    return allowed
 
 def _in_any(bbox, rects):
     cx = (bbox[0] + bbox[2]) / 2
@@ -272,8 +297,10 @@ def collect_font_spans(pdf_path: str, scheme: str = "GFT"):
     out = []
 
     # status lintas halaman (khusus AI)
-    region = "title" if scheme == "AI" else "body"
+    region = "title" if is_article_scheme(scheme) else "body"
     abstract_started = False
+    title_finished = False
+    author_started = False
 
     try:
         for page in doc:
@@ -310,7 +337,7 @@ def collect_font_spans(pdf_path: str, scheme: str = "GFT"):
                     # ---- tentukan jenis baris ----
                     kind = None
 
-                    if scheme == "AI" and pno <= ABSTRACT_MAX_PAGE:
+                    if is_article_scheme(scheme) and pno <= ABSTRACT_MAX_PAGE:
                         if RE_ABSTRACT_HEADING.match(upper):
                             abstract_started = True
                             region = "abstract"
@@ -321,6 +348,46 @@ def collect_font_spans(pdf_path: str, scheme: str = "GFT"):
                     first_size = (
                         round(float(spans[0].get("size", 0)), 2) if spans else 0
                     )
+
+                    if is_article_scheme(scheme) and pno == 1 and not abstract_started:
+
+                        special = get_scheme(scheme).get(
+                            "first_page_special", {}
+                        )
+
+                        title_size = float(
+                            special.get("title_font_size", FONT["size_pt"])
+                        )
+
+                        author_size = float(
+                            special.get("author_font_size", FONT["size_pt"])
+                        )
+
+                        if RE_ABSTRACT_HEADING.match(upper):
+                            abstract_started = True
+                            region = "abstract"
+                            kind = "abstract_heading"
+
+                        elif not title_finished:
+
+                            if abs(first_size - title_size) <= TOLERANCE:
+                                kind = "title"
+
+                            elif abs(first_size - author_size) <= TOLERANCE:
+                                title_finished = True
+                                author_started = True
+                                kind = "author"
+
+                            else:
+                                kind = "title"
+
+                        elif author_started:
+
+                            if abs(first_size - author_size) <= TOLERANCE:
+                                kind = "author"
+
+                            else:
+                                kind = "author"
 
                     if kind is None:
                         if is_caption_text(line_text):
@@ -346,9 +413,9 @@ def collect_font_spans(pdf_path: str, scheme: str = "GFT"):
                             kind = "caption"
                         elif _in_any(line["bbox"], table_rects):
                             kind = "table"
-                        elif scheme == "AI" and region == "abstract" and pno <= ABSTRACT_MAX_PAGE:
+                        elif is_article_scheme(scheme) and region == "abstract" and pno <= ABSTRACT_MAX_PAGE:
                             kind = "abstract"
-                        elif scheme == "AI" and region == "title" and pno <= ABSTRACT_MAX_PAGE:
+                        elif is_article_scheme(scheme) and region == "title" and pno <= ABSTRACT_MAX_PAGE:
                             kind = "title"
                         else:
                             kind = "body"
@@ -373,14 +440,14 @@ def collect_font_spans(pdf_path: str, scheme: str = "GFT"):
 
             # halaman pertama tanpa heading Abstrak: jangan biarkan region 'title'
             # meluas ke halaman berikutnya
-            if scheme == "AI" and pno >= ABSTRACT_MAX_PAGE and not abstract_started:
+            if is_article_scheme(scheme) and pno >= ABSTRACT_MAX_PAGE and not abstract_started:
                 region = "body"
     finally:
         doc.close()
 
     # Jika judul ternyata tidak diikuti heading Abstrak sama sekali,
     # anggap tidak ada area judul/abstrak khusus (ketat: 12 pt).
-    if scheme == "AI" and not abstract_started:
+    if is_article_scheme(scheme) and not abstract_started:
         for sp in out:
             if sp["kind"] in ("title", "abstract"):
                 sp["kind"] = "body"

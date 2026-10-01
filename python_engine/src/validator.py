@@ -16,6 +16,7 @@ from rules import (
     FONT,
     PAGE_NUMBER,
     SCHEMES,
+    is_article_scheme,
 )
 
 
@@ -41,9 +42,9 @@ def points_to_cm(pt):
 # DOCUMENT STRUCTURE
 # ============================================================
 
-def analyze_document_structure(pdf_path, scheme):
+def analyze_document_structure(pdf_path, scheme="GFT"):
     pages = scan_pages(pdf_path)
-    structure = analyze_structure(pages, scheme)
+    structure = analyze_structure(pages,scheme,pdf_path)
     return pages, structure
 
 
@@ -523,7 +524,7 @@ def check_front_matter_ai(pages, structure):
 
 def check_front_matter(pages, structure, scheme="GFT"):
     """Proposal tidak boleh punya sampul, pengesahan, ringkasan, atau abstrak."""
-    if scheme == "AI":
+    if is_article_scheme(scheme):
         return check_front_matter_ai(pages, structure)
 
     di = structure.get("daftar_isi")
@@ -690,8 +691,6 @@ def check_page_number_coverage(page_number_result, structure):
 # ============================================================
 
 def print_document_structure(structure):
-    
-    pages, structure = analyze_document_structure(pdf_path,scheme)
 
     print()
     print("-" * 70)
@@ -1045,6 +1044,10 @@ if __name__ == "__main__":
 
             if index + 1 < len(sys.argv):
                 scheme = sys.argv[index + 1].upper()
+
+        # Dukung juga penulisan posisional: validator.py file.pdf AI
+        elif len(sys.argv) >= 3 and not sys.argv[2].startswith("--"):
+            scheme = sys.argv[2].upper()
 
     pdf_path = pdf_path.strip('"')
 
