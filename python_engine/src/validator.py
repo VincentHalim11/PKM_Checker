@@ -8,6 +8,8 @@ from font_size_checker import evaluate_font_sizes
 from filters import is_page_number_text
 from line_spacing_checker import evaluate as evaluate_line_spacing
 from page_number_analyzer import evaluate as evaluate_page_number
+from page_number_analyzer import evaluate_sequence as evaluate_page_number_sequence
+from alignment_checker import evaluate as evaluate_alignment
 from section_analyzer import scan_pages, analyze_structure
 
 from rules import (
@@ -855,10 +857,17 @@ def validate_pdf(pdf_path, scheme):
     line_spacing_result = check_line_spacing(pdf_path, core_range)
 
     # --------------------------------------------------------
+    # ALIGNMENT (rata kiri-kanan)
+    # --------------------------------------------------------
+
+    alignment_result = evaluate_alignment(pdf_path, core_range, scheme)
+
+    # --------------------------------------------------------
     # PAGE NUMBER
     # --------------------------------------------------------
 
     page_number_result = check_page_number(pdf_path)
+    sequence_result = evaluate_page_number_sequence(pdf_path, structure)
 
     front_result = check_front_matter(pages, structure, scheme)
     core_result = check_core_pages(structure, scheme)
@@ -913,13 +922,21 @@ def validate_pdf(pdf_path, scheme):
 
     # Line spacing
     ls = line_spacing_result
-    icon = {"PASS": "✅", "FAIL": "❌", "REVIEW": "⚠️"}[ls["status"]]
+    icon_map = {"PASS": "✅", "FAIL": "❌", "REVIEW": "⚠️"}
+    icon = icon_map[ls["status"]]
     print()
     print(f"{icon} Line Spacing    : {ls['message']}")
     if ls["details"]["warning"]:
         print(f"   ⚠️ {ls['details']['warning']}")
     if ls["status"] != "PASS" and ls["details"]["off_pages"]:
         print(f"   Halaman menyimpang: {ls['details']['off_pages']}")
+
+    # Alignment
+    al = alignment_result
+    print()
+    print(f"{icon_map[al['status']]} Alignment       : {al['message']}")
+    if al["status"] != "PASS" and al["details"].get("off_pages"):
+        print(f"   Halaman menyimpang: {al['details']['off_pages']}")
 
     # Page number
     pn_font = page_number_result["font"]
@@ -931,6 +948,7 @@ def validate_pdf(pdf_path, scheme):
     else:
         print(f"{icons[pn_font['status']]} Nomor Hal. Font  : {pn_font['message']}")
         print(f"{icons[pn_pos['status']]} Nomor Hal. Posisi: {pn_pos['message']}")
+    print(f"{icons[sequence_result['status']]} Nomor Hal. Urutan: {sequence_result['message']}")
 
     print()
     print(f"{icons[coverage_result['status']]} Cakupan Nomor  : {coverage_result['message']}")
@@ -991,6 +1009,8 @@ def validate_pdf(pdf_path, scheme):
         front_result["status"],
         core_result["status"],
         coverage_result["status"],
+        alignment_result["status"],
+        sequence_result["status"],
     ]
 
     if "FAIL" in results:

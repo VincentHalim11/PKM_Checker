@@ -233,6 +233,96 @@ def evaluate(pdf_path):
     return {"font": font_r, "position": pos_r}
 
 
+# ---------- Urutan nomor (aturan: romawi mulai i; bagian inti mulai 1) ----------
+_ROMAN_VAL = {"i": 1, "v": 5, "x": 10, "l": 50, "c": 100, "d": 500, "m": 1000}
+
+
+def roman_to_int(text):
+    t, total = text.lower(), 0
+    for i, ch in enumerate(t):
+        v = _ROMAN_VAL[ch]
+        total += -v if i + 1 < len(t) and _ROMAN_VAL[t[i + 1]] > v else v
+    return total
+
+
+def int_to_roman(n):
+    out = ""
+    for val, sym in [(1000, "m"), (900, "cm"), (500, "d"), (400, "cd"), (100, "c"),
+                     (90, "xc"), (50, "l"), (40, "xl"), (10, "x"), (9, "ix"),
+                     (5, "v"), (4, "iv"), (1, "i")]:
+        while n >= val:
+            out += sym
+            n -= val
+    return out
+
+
+def evaluate_sequence(pdf_path, structure):
+    """Nomor halaman awal harus romawi i, ii, ... (urut dari halaman fisik 1);
+    nomor bagian inti harus angka Arab yang DIMULAI dari 1 pada halaman awal
+    bagian inti dan terus bertambah. Pelanggaran di halaman awal/bagian inti
+    -> FAIL; pelanggaran hanya di halaman setelah bagian inti -> REVIEW."""
+    core_start = structure.get("core_start") or structure.get("bab1")
+    core_hi = structure.get("core_hi")
+
+    doc = pymupdf.open(pdf_path)
+    found = {}
+    for pno, page in enumerate(doc, start=1):
+        c = find_candidates(page)
+        if c:
+            found[pno] = c[0]
+    doc.close()
+
+    if not found:
+        return {"status": "REVIEW",
+                "message": "Tidak ada nomor halaman terdeteksi; urutan tidak dapat dinilai.",
+                "details": []}
+    if not core_start:
+        return {"status": "REVIEW",
+                "message": "Awal bagian inti tidak ditemukan; urutan nomor tidak dapat dinilai.",
+                "details": []}
+
+    problems = []   # (halaman fisik, tertulis, seharusnya)
+    for pno, c in sorted(found.items()):
+        if pno >= core_start:
+            want = pno - core_start + 1
+            ok = c["style"] == "arabic" and int(c["text"]) == want
+            want_txt = str(want)
+        else:
+            want = pno
+            ok = c["style"] == "roman" and roman_to_int(c["text"]) == want
+            want_txt = int_to_roman(want)
+        if not ok:
+            problems.append((pno, c["text"], want_txt, c["style"]))
+
+    n = len(found)
+    if not problems:
+        if core_start == 1:
+            msg = f"Angka Arab dimulai dari 1 pada halaman pertama dan berurutan. ({n} nomor diperiksa)"
+        else:
+            msg = (f"Romawi dari i pada halaman awal; angka Arab dimulai dari 1 pada "
+                   f"hal. fisik {core_start} dan berurutan. ({n} nomor diperiksa)")
+        return {"status": "PASS", "message": msg, "details": []}
+
+    in_scope = [p for p in problems if p[0] < core_start or not core_hi or p[0] <= core_hi]
+    status = "FAIL" if in_scope else "REVIEW"
+
+    # pergeseran konstan pada bagian inti (mis. mulai dari 5, bukan 1)?
+    core_problems = [p for p in problems if p[0] >= core_start and p[3] == "arabic"]
+    offsets = {int(p[1]) - int(p[2]) for p in core_problems}
+    first_core = found.get(core_start)
+    if (core_problems and len(offsets) == 1 and first_core is not None
+            and first_core["style"] == "arabic" and int(first_core["text"]) != 1):
+        off = offsets.pop()
+        msg = (f"Penomoran bagian inti tidak dimulai dari 1: hal. fisik {core_start} "
+               f"bernomor {first_core['text']} (seharusnya 1); seluruh urutan setelahnya "
+               f"bergeser {off:+d} ({len(core_problems)} halaman).")
+    else:
+        ex = "; ".join(f"hal. fisik {p} tertulis '{t}' (seharusnya '{w}')"
+                       for p, t, w, _ in problems[:3])
+        msg = f"{len(problems)} nomor halaman tidak sesuai urutan: {ex}."
+    return {"status": status, "message": msg, "details": problems}
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print('Pemakaian: python page_number_analyzer.py "path.pdf"')
