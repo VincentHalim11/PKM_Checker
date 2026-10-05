@@ -1,6 +1,9 @@
 import re
 import sys
 import pymupdf
+import json
+import io
+from contextlib import redirect_stdout, redirect_stderr
 from statistics import median
 
 from font_checker import extract_fonts, normalize_font_name
@@ -1038,6 +1041,29 @@ def validate_pdf(pdf_path, scheme):
 
     print("=" * 70)
 
+# ========================================================
+# RETURN STRUCTURED RESULT
+# ========================================================
+
+
+    return {
+    "status": final_status,
+    "checks": {
+        "page_size": page_result,
+        "font": font_result,
+        "font_size": font_size_result,
+        "margin": margin_result,
+        "line_spacing": line_spacing_result,
+        "alignment": alignment_result,
+        "page_number_font": page_number_result["font"],
+        "page_number_position": page_number_result["position"],
+        "page_number_sequence": sequence_result,
+        "page_number_coverage": coverage_result,
+        "front_matter": front_result,
+        "core_pages": core_result,
+    }
+}
+
 
 # ============================================================
 # RUN
@@ -1081,4 +1107,13 @@ if __name__ == "__main__":
         )
         sys.exit(1)
 
-    validate_pdf(pdf_path, scheme)
+    if "--json" in sys.argv:
+        buffer = io.StringIO()
+
+        with redirect_stdout(buffer), redirect_stderr(buffer):
+            result = validate_pdf(pdf_path, scheme)
+
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+
+    else:
+        validate_pdf(pdf_path, scheme)
