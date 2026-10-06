@@ -7,9 +7,9 @@ void main() {
   ) async {
     await tester.pumpWidget(const PKMCheckerApp());
 
-    expect(find.text('PKM Checker Test'), findsOneWidget);
+    expect(find.text('PKM 2026 Checker'), findsWidgets);
     expect(find.text('Pilih PDF'), findsOneWidget);
-    expect(find.text('Jalankan Validator'), findsOneWidget);
-    expect(find.text('Status: Belum diuji'), findsOneWidget);
+    expect(find.text('Periksa Dokumen'), findsOneWidget);
+    expect(find.text('Skema PKM'), findsOneWidget);
   });
 }

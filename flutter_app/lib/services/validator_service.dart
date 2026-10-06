@@ -14,20 +14,14 @@ class ValidatorService {
   }) async {
     final result = await Process.run(
       pythonPath,
-      [
-        validatorPath,
-        pdfPath,
-        '--scheme',
-        scheme,
-        '--json',
-      ],
+      [validatorPath, pdfPath, '--scheme', scheme, '--json'],
       runInShell: false,
+      stdoutEncoding: utf8,
+      stderrEncoding: utf8,
     );
 
     if (result.exitCode != 0) {
-      throw Exception(
-        'Validator gagal:\n${result.stderr}',
-      );
+      throw Exception('Validator gagal:\n${result.stderr}');
     }
 
     final output = result.stdout.toString();
@@ -35,9 +29,7 @@ class ValidatorService {
     try {
       return jsonDecode(output) as Map<String, dynamic>;
     } catch (e) {
-      throw Exception(
-        'Output Python bukan JSON valid.\n$output',
-      );
+      throw Exception('Output Python bukan JSON valid.\n$output');
     }
   }
 }

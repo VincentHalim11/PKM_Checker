@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'screens/home_screen.dart';
 
 void main() {
@@ -14,9 +15,7 @@ class PKMCheckerApp extends StatelessWidget {
       title: 'PKM Checker',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.deepPurple,
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
       home: const HomeScreen(),
