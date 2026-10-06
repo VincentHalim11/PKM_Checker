@@ -1108,6 +1108,9 @@ if __name__ == "__main__":
         sys.exit(1)
 
     if "--json" in sys.argv:
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
+
         buffer = io.StringIO()
 
         with redirect_stdout(buffer), redirect_stderr(buffer):
