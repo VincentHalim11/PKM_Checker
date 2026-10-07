@@ -1,3 +1,4 @@
+import os
 import re
 import sys
 import pymupdf
@@ -1066,6 +1067,26 @@ def validate_pdf(pdf_path, scheme):
 
 
 # ============================================================
+# ERROR DALAM MODE --json
+# ============================================================
+
+def emit_json_error(message):
+    """Mode --json selalu menghasilkan JSON di stdout, termasuk saat error.
+    Format: {"status": "ERROR", "error": "...", "checks": {}}; kode keluar 2."""
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
+    print(json.dumps(
+        {"status": "ERROR", "error": message, "checks": {}},
+        ensure_ascii=False,
+        indent=2,
+    ))
+    sys.exit(2)
+
+
+# ============================================================
 # RUN
 # ============================================================
 
@@ -1096,27 +1117,44 @@ if __name__ == "__main__":
             scheme = sys.argv[2].upper()
 
     pdf_path = pdf_path.strip('"')
+    json_mode = "--json" in sys.argv
 
     if scheme not in SCHEMES:
-        print()
-        print(
-            f"❌ Skema PKM '{scheme}' tidak tersedia."
+        message = (
+            f"Skema PKM '{scheme}' tidak tersedia. "
+            f"Skema tersedia: {', '.join(SCHEMES.keys())}"
         )
+
+        if json_mode:
+            emit_json_error(message)
+
+        print()
+        print(f"❌ {message.split('. Skema tersedia')[0]}.")
         print(
             f"Skema tersedia: {', '.join(SCHEMES.keys())}"
         )
         sys.exit(1)
 
-    if "--json" in sys.argv:
+    if json_mode and not os.path.isfile(pdf_path):
+        emit_json_error(f"File PDF tidak ditemukan: {pdf_path}")
+
+    if json_mode:
         sys.stdout.reconfigure(encoding="utf-8")
         sys.stderr.reconfigure(encoding="utf-8")
 
         buffer = io.StringIO()
 
-        with redirect_stdout(buffer), redirect_stderr(buffer):
-            result = validate_pdf(pdf_path, scheme)
+        try:
+            with redirect_stdout(buffer), redirect_stderr(buffer):
+                result = validate_pdf(pdf_path, scheme)
+        except Exception as e:
+            emit_json_error(
+                f"Gagal memeriksa PDF ({type(e).__name__}): {e}"
+            )
 
-        print(json.dumps(result, ensure_ascii=False, indent=2))
+        # default=str: nilai yang tidak bisa diserialisasi (mis. set)
+        # diubah menjadi teks, bukan membuat program crash.
+        print(json.dumps(result, ensure_ascii=False, indent=2, default=str))
 
     else:
         validate_pdf(pdf_path, scheme)

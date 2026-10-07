@@ -1,0 +1,768 @@
+([('MSVCP140.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\MSVCP140.dll',
+   'BINARY'),
+  ('PIL\\_avif.cp314-win_amd64.pyd',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\PIL\\_avif.cp314-win_amd64.pyd',
+   'EXTENSION'),
+  ('PIL\\_imaging.cp314-win_amd64.pyd',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\PIL\\_imaging.cp314-win_amd64.pyd',
+   'EXTENSION'),
+  ('PIL\\_imagingcms.cp314-win_amd64.pyd',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\PIL\\_imagingcms.cp314-win_amd64.pyd',
+   'EXTENSION'),
+  ('PIL\\_imagingmath.cp314-win_amd64.pyd',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\PIL\\_imagingmath.cp314-win_amd64.pyd',
+   'EXTENSION'),
+  ('PIL\\_imagingtk.cp314-win_amd64.pyd',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\PIL\\_imagingtk.cp314-win_amd64.pyd',
+   'EXTENSION'),
+  ('PIL\\_webp.cp314-win_amd64.pyd',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\PIL\\_webp.cp314-win_amd64.pyd',
+   'EXTENSION'),
+  ('VCRUNTIME140.dll',
+   'C:\\Users\\Vincent '
+   'H\\AppData\\Local\\Python\\pythoncore-3.14-64\\VCRUNTIME140.dll',
+   'BINARY'),
+  ('VCRUNTIME140_1.dll',
+   'C:\\Users\\Vincent '
+   'H\\AppData\\Local\\Python\\pythoncore-3.14-64\\VCRUNTIME140_1.dll',
+   'BINARY'),
+  ('_bz2.pyd',
+   'C:\\Users\\Vincent '
+   'H\\AppData\\Local\\Python\\pythoncore-3.14-64\\DLLs\\_bz2.pyd',
+   'EXTENSION'),
+  ('_ctypes.pyd',
+   'C:\\Users\\Vincent '
+   'H\\AppData\\Local\\Python\\pythoncore-3.14-64\\DLLs\\_ctypes.pyd',
+   'EXTENSION'),
+  ('_decimal.pyd',
+   'C:\\Users\\Vincent '
+   'H\\AppData\\Local\\Python\\pythoncore-3.14-64\\DLLs\\_decimal.pyd',
+   'EXTENSION'),
+  ('_elementtree.pyd',
+   'C:\\Users\\Vincent '
+   'H\\AppData\\Local\\Python\\pythoncore-3.14-64\\DLLs\\_elementtree.pyd',
+   'EXTENSION'),
+  ('_hashlib.pyd',
+   'C:\\Users\\Vincent '
+   'H\\AppData\\Local\\Python\\pythoncore-3.14-64\\DLLs\\_hashlib.pyd',
+   'EXTENSION'),
+  ('_lzma.pyd',
+   'C:\\Users\\Vincent '
+   'H\\AppData\\Local\\Python\\pythoncore-3.14-64\\DLLs\\_lzma.pyd',
+   'EXTENSION'),
+  ('_multiprocessing.pyd',
+   'C:\\Users\\Vincent '
+   'H\\AppData\\Local\\Python\\pythoncore-3.14-64\\DLLs\\_multiprocessing.pyd',
+   'EXTENSION'),
+  ('_queue.pyd',
+   'C:\\Users\\Vincent '
+   'H\\AppData\\Local\\Python\\pythoncore-3.14-64\\DLLs\\_queue.pyd',
+   'EXTENSION'),
+  ('_socket.pyd',
+   'C:\\Users\\Vincent '
+   'H\\AppData\\Local\\Python\\pythoncore-3.14-64\\DLLs\\_socket.pyd',
+   'EXTENSION'),
+  ('_ssl.pyd',
+   'C:\\Users\\Vincent '
+   'H\\AppData\\Local\\Python\\pythoncore-3.14-64\\DLLs\\_ssl.pyd',
+   'EXTENSION'),
+  ('_wmi.pyd',
+   'C:\\Users\\Vincent '
+   'H\\AppData\\Local\\Python\\pythoncore-3.14-64\\DLLs\\_wmi.pyd',
+   'EXTENSION'),
+  ('_zstd.pyd',
+   'C:\\Users\\Vincent '
+   'H\\AppData\\Local\\Python\\pythoncore-3.14-64\\DLLs\\_zstd.pyd',
+   'EXTENSION'),
+  ('api-ms-win-core-console-l1-1-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-core-console-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-datetime-l1-1-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-core-datetime-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-debug-l1-1-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-core-debug-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-errorhandling-l1-1-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-core-errorhandling-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-fibers-l1-1-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-core-fibers-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-fibers-l1-1-1.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-core-fibers-l1-1-1.dll',
+   'BINARY'),
+  ('api-ms-win-core-file-l1-1-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-core-file-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-file-l1-2-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-core-file-l1-2-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-file-l2-1-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-core-file-l2-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-handle-l1-1-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-core-handle-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-heap-l1-1-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-core-heap-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-interlocked-l1-1-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-core-interlocked-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-kernel32-legacy-l1-1-1.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-core-kernel32-legacy-l1-1-1.dll',
+   'BINARY'),
+  ('api-ms-win-core-libraryloader-l1-1-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-core-libraryloader-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-localization-l1-2-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-core-localization-l1-2-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-memory-l1-1-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-core-memory-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-namedpipe-l1-1-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-core-namedpipe-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-processenvironment-l1-1-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-core-processenvironment-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-processthreads-l1-1-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-core-processthreads-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-processthreads-l1-1-1.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-core-processthreads-l1-1-1.dll',
+   'BINARY'),
+  ('api-ms-win-core-profile-l1-1-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-core-profile-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-rtlsupport-l1-1-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-core-rtlsupport-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-string-l1-1-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-core-string-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-synch-l1-1-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-core-synch-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-synch-l1-2-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-core-synch-l1-2-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-sysinfo-l1-1-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-core-sysinfo-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-sysinfo-l1-2-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-core-sysinfo-l1-2-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-timezone-l1-1-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-core-timezone-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-util-l1-1-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-core-util-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-crt-conio-l1-1-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-crt-conio-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-crt-convert-l1-1-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-crt-convert-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-crt-environment-l1-1-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-crt-environment-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-crt-filesystem-l1-1-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-crt-filesystem-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-crt-heap-l1-1-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-crt-heap-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-crt-locale-l1-1-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-crt-locale-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-crt-math-l1-1-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-crt-math-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-crt-process-l1-1-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-crt-process-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-crt-runtime-l1-1-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-crt-runtime-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-crt-stdio-l1-1-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-crt-stdio-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-crt-string-l1-1-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-crt-string-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-crt-time-l1-1-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-crt-time-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-crt-utility-l1-1-0.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\api-ms-win-crt-utility-l1-1-0.dll',
+   'BINARY'),
+  ('base_library.zip',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\build\\pkm_engine\\base_library.zip',
+   'DATA'),
+  ('libcrypto-3.dll',
+   'C:\\Users\\Vincent '
+   'H\\AppData\\Local\\Python\\pythoncore-3.14-64\\DLLs\\libcrypto-3.dll',
+   'BINARY'),
+  ('libffi-8.dll',
+   'C:\\Users\\Vincent '
+   'H\\AppData\\Local\\Python\\pythoncore-3.14-64\\DLLs\\libffi-8.dll',
+   'BINARY'),
+  ('libssl-3.dll',
+   'C:\\Users\\Vincent '
+   'H\\AppData\\Local\\Python\\pythoncore-3.14-64\\DLLs\\libssl-3.dll',
+   'BINARY'),
+  ('pkm_engine.exe',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\build\\pkm_engine\\pkm_engine.exe',
+   'EXECUTABLE'),
+  ('pyexpat.pyd',
+   'C:\\Users\\Vincent '
+   'H\\AppData\\Local\\Python\\pythoncore-3.14-64\\DLLs\\pyexpat.pyd',
+   'EXTENSION'),
+  ('pymupdf-1.28.2.dist-info\\COPYING',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf-1.28.2.dist-info\\COPYING',
+   'DATA'),
+  ('pymupdf-1.28.2.dist-info\\INSTALLER',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf-1.28.2.dist-info\\INSTALLER',
+   'DATA'),
+  ('pymupdf-1.28.2.dist-info\\METADATA',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf-1.28.2.dist-info\\METADATA',
+   'DATA'),
+  ('pymupdf-1.28.2.dist-info\\README.md',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf-1.28.2.dist-info\\README.md',
+   'DATA'),
+  ('pymupdf-1.28.2.dist-info\\RECORD',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf-1.28.2.dist-info\\RECORD',
+   'DATA'),
+  ('pymupdf-1.28.2.dist-info\\REQUESTED',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf-1.28.2.dist-info\\REQUESTED',
+   'DATA'),
+  ('pymupdf-1.28.2.dist-info\\WHEEL',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf-1.28.2.dist-info\\WHEEL',
+   'DATA'),
+  ('pymupdf-1.28.2.dist-info\\entry_points.txt',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf-1.28.2.dist-info\\entry_points.txt',
+   'DATA'),
+  ('pymupdf\\__init__.py',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\__init__.py',
+   'DATA'),
+  ('pymupdf\\__main__.py',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\__main__.py',
+   'DATA'),
+  ('pymupdf\\_apply_pages.py',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\_apply_pages.py',
+   'DATA'),
+  ('pymupdf\\_build.py',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\_build.py',
+   'DATA'),
+  ('pymupdf\\_extra.pyd',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\_extra.pyd',
+   'EXTENSION'),
+  ('pymupdf\\_mupdf.pyd',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\_mupdf.pyd',
+   'EXTENSION'),
+  ('pymupdf\\_table_headers.py',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\_table_headers.py',
+   'DATA'),
+  ('pymupdf\\_table_refine.py',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\_table_refine.py',
+   'DATA'),
+  ('pymupdf\\_table_spans.py',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\_table_spans.py',
+   'DATA'),
+  ('pymupdf\\_table_union.py',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\_table_union.py',
+   'DATA'),
+  ('pymupdf\\_wxcolors.py',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\_wxcolors.py',
+   'DATA'),
+  ('pymupdf\\extra.py',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\extra.py',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\classes.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\classes.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\classes2.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\classes2.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\exceptions.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\exceptions.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\extra.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\extra.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\archive.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\archive.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\band-writer.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\band-writer.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\barcode.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\barcode.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\bidi.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\bidi.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\bitmap.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\bitmap.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\buffer.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\buffer.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\color.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\color.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\compress.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\compress.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\compressed-buffer.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\compressed-buffer.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\config.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\config.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\context.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\context.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\crypt.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\crypt.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\deskew.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\deskew.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\device.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\device.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\display-list.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\display-list.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\document.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\document.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\export.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\export.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\filter.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\filter.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\font.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\font.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\geometry.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\geometry.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\getopt.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\getopt.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\glyph-cache.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\glyph-cache.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\glyph.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\glyph.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\hash.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\hash.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\heap-imp.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\heap-imp.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\heap.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\heap.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\hyphen.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\hyphen.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\image.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\image.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\json.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\json.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\link.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\link.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\log.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\log.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\options.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\options.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\outline.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\outline.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\output-svg.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\output-svg.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\output.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\output.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\path.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\path.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\pixmap.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\pixmap.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\pool.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\pool.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\separation.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\separation.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\shade.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\shade.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\store.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\store.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\story-writer.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\story-writer.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\story.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\story.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\stream.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\stream.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\string-util.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\string-util.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\structured-text.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\structured-text.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\system.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\system.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\text.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\text.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\track-usage.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\track-usage.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\transition.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\transition.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\tree.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\tree.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\types.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\types.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\util.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\util.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\version.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\version.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\write-pixmap.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\write-pixmap.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\writer.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\writer.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\xml.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\fitz\\xml.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\functions.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\functions.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\helpers\\mu-office-lib.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\helpers\\mu-office-lib.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\helpers\\mu-threads.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\helpers\\mu-threads.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\helpers\\pkcs7-openssl.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\helpers\\pkcs7-openssl.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\html.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\html.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\internal.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\internal.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\memento.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\memento.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\pdf.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\pdf.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\annot.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\annot.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\clean.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\clean.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\cmap.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\cmap.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\crypt.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\crypt.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\document.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\document.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\event.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\event.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\font.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\font.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\form.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\form.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\image-rewriter.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\image-rewriter.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\interpret.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\interpret.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\javascript.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\javascript.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\name-table.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\name-table.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\object.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\object.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\page.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\page.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\parse.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\parse.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\recolor.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\recolor.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\resource.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\resource.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\xref.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\xref.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\zugferd.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\pdf\\zugferd.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\include\\mupdf\\ucdn.h',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\include\\mupdf\\ucdn.h',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\lib\\libmuthreads.lib',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\lib\\libmuthreads.lib',
+   'DATA'),
+  ('pymupdf\\mupdf-devel\\lib\\mupdfcpp64.lib',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf-devel\\lib\\mupdfcpp64.lib',
+   'DATA'),
+  ('pymupdf\\mupdf.py',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdf.py',
+   'DATA'),
+  ('pymupdf\\mupdfcpp64.dll',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\mupdfcpp64.dll',
+   'BINARY'),
+  ('pymupdf\\py.typed',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\py.typed',
+   'DATA'),
+  ('pymupdf\\pymupdf.py',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\pymupdf.py',
+   'DATA'),
+  ('pymupdf\\table.py',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\table.py',
+   'DATA'),
+  ('pymupdf\\utils.py',
+   'D:\\Kuliah\\Semester '
+   '7\\PKM_Checker\\python_engine\\.venv\\Lib\\site-packages\\pymupdf\\utils.py',
+   'DATA'),
+  ('python3.dll',
+   'C:\\Users\\Vincent '
+   'H\\AppData\\Local\\Python\\pythoncore-3.14-64\\python3.dll',
+   'BINARY'),
+  ('python314.dll',
+   'C:\\Users\\Vincent '
+   'H\\AppData\\Local\\Python\\pythoncore-3.14-64\\python314.dll',
+   'BINARY'),
+  ('select.pyd',
+   'C:\\Users\\Vincent '
+   'H\\AppData\\Local\\Python\\pythoncore-3.14-64\\DLLs\\select.pyd',
+   'EXTENSION'),
+  ('ucrtbase.dll',
+   'C:\\Program Files\\Eclipse '
+   'Adoptium\\jdk-25.0.1.8-hotspot\\bin\\ucrtbase.dll',
+   'BINARY'),
+  ('unicodedata.pyd',
+   'C:\\Users\\Vincent '
+   'H\\AppData\\Local\\Python\\pythoncore-3.14-64\\DLLs\\unicodedata.pyd',
+   'EXTENSION')],)

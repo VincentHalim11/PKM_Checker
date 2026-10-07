@@ -167,6 +167,110 @@ TESTS = [
 
 
 # ============================================================
+# KONTRAK JSON (dipakai UI Flutter - home_screen.dart)
+# ============================================================
+# Kunci di bawah harus sama dengan 'definitions' di _buildValidationResults().
+# Jika sebuah kunci hilang, Flutter diam-diam menyembunyikan kartunya.
+
+REQUIRED_CHECKS = [
+    "page_size",
+    "font",
+    "font_size",
+    "margin",
+    "line_spacing",
+    "alignment",
+    "page_number_font",
+    "page_number_position",
+    "page_number_sequence",
+    "page_number_coverage",
+    "front_matter",
+    "core_pages",
+]
+
+VALID_STATUS = {"PASS", "FAIL", "REVIEW"}
+
+
+def check_contract(filename, data):
+    """Return daftar masalah kontrak (kosong bila semua benar)."""
+    problems = []
+    checks = data["checks"]
+
+    missing = [k for k in REQUIRED_CHECKS if k not in checks]
+    if missing:
+        problems.append(f"kunci checks hilang: {missing}")
+
+    for key in REQUIRED_CHECKS:
+        item = checks.get(key)
+        if item is None:
+            continue
+        if not isinstance(item, dict):
+            problems.append(f"checks.{key} bukan object")
+            continue
+        if item.get("status") not in VALID_STATUS:
+            problems.append(f"checks.{key}.status tidak valid: {item.get('status')!r}")
+        if not isinstance(item.get("message"), str):
+            problems.append(f"checks.{key}.message bukan string")
+        if "details" not in item:
+            problems.append(f"checks.{key} tidak punya 'details'")
+
+    return problems
+
+
+# ============================================================
+# ERROR HANDLING (mode --json harus tetap menghasilkan JSON)
+# ============================================================
+
+ERROR_TESTS = [
+    {
+        "name": "skema tidak dikenal",
+        "file": "SALAH_01_font_bukan_TNR_PKM-K.pdf",
+        "scheme": "XYZ",
+    },
+    {
+        "name": "file PDF tidak ada",
+        "file": "TIDAK_ADA.pdf",
+        "scheme": "K",
+    },
+]
+
+
+def run_error_test(test_case):
+    name = test_case["name"]
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(VALIDATOR),
+            str(TEST_CASES / test_case["file"]),
+            "--scheme",
+            test_case["scheme"],
+            "--json",
+        ],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+    )
+
+    try:
+        data = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        print(f"[FAIL] error: {name} - stdout bukan JSON")
+        print(result.stdout)
+        return False
+
+    if data.get("status") != "ERROR" or not data.get("error"):
+        print(f"[FAIL] error: {name} - harus status=ERROR dengan pesan 'error'")
+        return False
+
+    if result.returncode == 0:
+        print(f"[FAIL] error: {name} - kode keluar seharusnya bukan 0")
+        return False
+
+    print(f"[PASS] error: {name}")
+    return True
+
+
+# ============================================================
 # RUN ONE TEST
 # ============================================================
 
@@ -250,6 +354,18 @@ def run_json_test(test_case):
         return False
 
     # --------------------------------------------------------
+    # KONTRAK 12 KUNCI (agar UI tidak diam-diam menyembunyikan kartu)
+    # --------------------------------------------------------
+
+    problems = check_contract(filename, data)
+
+    if problems:
+        print(f"[FAIL] {filename} - kontrak JSON tidak terpenuhi")
+        for p in problems:
+            print(f"    - {p}")
+        return False
+
+    # --------------------------------------------------------
     # PASS
     # --------------------------------------------------------
 
@@ -273,11 +389,17 @@ def main():
         if run_json_test(test_case):
             passed += 1
 
+    for test_case in ERROR_TESTS:
+        if run_error_test(test_case):
+            passed += 1
+
+    total = len(TESTS) + len(ERROR_TESTS)
+
     print("=" * 60)
-    print(f"{passed}/{len(TESTS)} JSON test lulus")
+    print(f"{passed}/{total} JSON test lulus")
     print("=" * 60)
 
-    if passed != len(TESTS):
+    if passed != total:
         sys.exit(1)
 
 

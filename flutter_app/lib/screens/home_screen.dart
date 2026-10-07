@@ -66,10 +66,14 @@ class _HomeScreenState extends State<HomeScreen> {
         scheme: _selectedScheme,
       );
 
-      setState(() {
-        _validationResult = result;
-        _status = result['status']?.toString() ?? 'UNKNOWN';
-      });
+    setState(() {
+      _validationResult = result;
+      _status = result['status']?.toString() ?? 'UNKNOWN';
+
+      if (_status == 'ERROR') {
+        _error = result['error']?.toString();
+      }
+    });
     } catch (e) {
       setState(() {
         _status = 'ERROR';
@@ -213,6 +217,16 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   String _getSummary(String key, String status) {
+    // REVIEW bukan pelanggaran: validator ragu dan butuh pemeriksaan manual.
+    // Tanpa cabang ini, REVIEW ikut menampilkan kalimat "tidak sesuai".
+    if (status == 'REVIEW') {
+      return 'Belum bisa dipastikan otomatis; periksa manual (lihat detail).';
+    }
+
+    if (status != 'PASS' && status != 'FAIL') {
+      return 'Status pemeriksaan tidak dikenali.';
+    }
+
     switch (key) {
       case 'page_size':
         return status == 'PASS'
