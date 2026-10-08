@@ -6,6 +6,10 @@ python_engine/.venv/
 *.pyc
 *.pyo
 
+# Python build artifacts
+python_engine/build/
+python_engine/dist/
+
 # IDE / editor
 .vscode/
 
