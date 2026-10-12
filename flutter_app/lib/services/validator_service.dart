@@ -34,8 +34,7 @@ class ValidatorService {
   // PATH HELPER
   // ==========================================================
 
-  static String _join(List<String> parts) =>
-      parts.join(Platform.pathSeparator);
+  static String _join(List<String> parts) => parts.join(Platform.pathSeparator);
 
   static bool _isEngineDir(String dir) =>
       File(_join([dir, 'src', 'validator.py'])).existsSync();
@@ -67,7 +66,10 @@ class ValidatorService {
       var dir = start.absolute;
 
       for (var i = 0; i < 12; i++) {
-        final candidates = <String>[dir.path, _join([dir.path, _engineDirName])];
+        final candidates = <String>[
+          dir.path,
+          _join([dir.path, _engineDirName]),
+        ];
 
         for (final candidate in candidates) {
           if (_isEngineDir(candidate)) {
@@ -126,7 +128,8 @@ class ValidatorService {
       executable = bundled;
       arguments = [pdfPath, '--scheme', scheme, '--json'];
       workingDirectory = File(bundled).parent.path;
-      hint = 'Folder "engine" di samping aplikasi mungkin rusak atau terblokir '
+      hint =
+          'Folder "engine" di samping aplikasi mungkin rusak atau terblokir '
           'antivirus. Pasang ulang paket aplikasi.';
     } else {
       // MODE PENGEMBANGAN: validator.py lewat Python.
@@ -151,7 +154,8 @@ class ValidatorService {
         '--json',
       ];
       workingDirectory = _join([engineDir, 'src']);
-      hint = 'Pastikan virtual environment ada di "$engineDir\\.venv", atau '
+      hint =
+          'Pastikan virtual environment ada di "$engineDir\\.venv", atau '
           'set environment variable PKM_PYTHON.';
     }
 

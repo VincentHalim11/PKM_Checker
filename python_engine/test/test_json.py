@@ -19,84 +19,111 @@ TESTS = [
     # --------------------------------------------------------
 
     {
-        "file": "SALAH_01_font_bukan_TNR_PKM-K.pdf",
-        "scheme": "K",
-        "expected_status": "FAIL",
+    "file": "SALAH_01_font_bukan_TNR_PKM-K.pdf",
+    "scheme": "K",
+    "expected_status": "FAIL",
+    "expected_checks": ["font"],
     },
     {
         "file": "SALAH_02_ukuran_huruf_11_PKM-KC.pdf",
         "scheme": "KC",
         "expected_status": "FAIL",
+        "expected_checks": ["font_size"],
     },
     {
         "file": "SALAH_03_spasi_1_5_PKM-KI.pdf",
         "scheme": "KI",
         "expected_status": "FAIL",
+        "expected_checks": ["line_spacing"],
     },
     {
         "file": "SALAH_04_rata_kiri_saja_PKM-PI.pdf",
         "scheme": "PI",
         "expected_status": "FAIL",
+        "expected_checks": ["alignment"],
     },
     {
         "file": "SALAH_05_margin_kiri_3cm_PKM-PM.pdf",
         "scheme": "PM",
         "expected_status": "FAIL",
+        "expected_checks": ["margin"],
     },
     {
         "file": "SALAH_06_kertas_Letter_PKM-RE.pdf",
         "scheme": "RE",
         "expected_status": "FAIL",
+        "expected_checks": ["page_size"],
     },
     {
         "file": "SALAH_07_bagian_inti_lebih_10_hal_PKM-RSH.pdf",
         "scheme": "RSH",
         "expected_status": "FAIL",
+        "expected_checks": ["core_pages"],
     },
     {
         "file": "SALAH_08_ada_halaman_sampul_PKM-VGK.pdf",
         "scheme": "VGK",
         "expected_status": "FAIL",
+        "expected_checks": ["front_matter"],
     },
     {
         "file": "SALAH_09_ada_abstrak_di_GFT_PKM-GFT.pdf",
         "scheme": "GFT",
         "expected_status": "FAIL",
+        "expected_checks": ["front_matter"],
     },
     {
         "file": "SALAH_10_daftar_isi_angka_arab_PKM-K.pdf",
         "scheme": "K",
         "expected_status": "FAIL",
+        "expected_checks": [
+            "page_number_position",
+            "page_number_sequence",
+        ],
     },
     {
         "file": "SALAH_11_penomoran_inti_mulai_5_PKM-PI.pdf",
         "scheme": "PI",
         "expected_status": "FAIL",
+        "expected_checks": ["page_number_sequence"],
     },
     {
         "file": "SALAH_12_ukuran_nomor_halaman_10_PKM-KI.pdf",
         "scheme": "KI",
         "expected_status": "FAIL",
+        "expected_checks": ["page_number_font"],
     },
     {
         "file": "SALAH_13_nomor_halaman_kiri_atas_PKM-PM.pdf",
         "scheme": "PM",
         "expected_status": "FAIL",
+        "expected_checks": ["page_number_position"],
     },
     {
         "file": "SALAH_14_bagian_inti_kurang_8_hal_GFT_PKM-GFT.pdf",
         "scheme": "GFT",
         "expected_status": "FAIL",
+        "expected_checks": ["core_pages"],
     },
     {
         "file": "SALAH_15_banyak_kesalahan_PKM-K.pdf",
         "scheme": "K",
         "expected_status": "FAIL",
+        "expected_checks": [
+            "page_size",
+            "font",
+            "margin",
+            "alignment",
+            "page_number_position",
+            "page_number_sequence",
+            "front_matter",
+        ],
     },
     {
-        "file": "SALAH_PKMUC(revisifont).pdf",
-        "scheme": "GENERAL",
-        "expected_status": "FAIL",
+    "file": "SALAH_PKMUC(revisifont).pdf",
+    "scheme": "GENERAL",
+    "expected_status": "FAIL",
+    "expected_checks": ["core_pages"],
     },
 
     # --------------------------------------------------------
@@ -325,6 +352,17 @@ def run_json_test(test_case):
         print(result.stdout)
 
         return False
+     # --------------------------------------------------------
+     # CHECK 'checks'
+     # --------------------------------------------------------
+    
+    if "checks" not in data:
+        print(f"[FAIL] {filename} - key 'checks' tidak ditemukan")
+        return False
+
+    if not isinstance(data["checks"], dict):
+        print(f"[FAIL] {filename} - 'checks' bukan object/dict")
+        return False
 
     # --------------------------------------------------------
     # CHECK ROOT STATUS
@@ -341,17 +379,20 @@ def run_json_test(test_case):
 
         return False
 
-    # --------------------------------------------------------
-    # CHECK 'checks'
-    # --------------------------------------------------------
+    if expected_status == "PASS":
+        non_pass_checks = [
+            key
+            for key, value in data["checks"].items()
+            if isinstance(value, dict)
+            and value.get("status") in {"FAIL", "REVIEW"}
+        ]
 
-    if "checks" not in data:
-        print(f"[FAIL] {filename} - key 'checks' tidak ditemukan")
-        return False
-
-    if not isinstance(data["checks"], dict):
-        print(f"[FAIL] {filename} - 'checks' bukan object/dict")
-        return False
+        if non_pass_checks:
+            print(
+                f"[FAIL] {filename} - "
+                f"ada pemeriksaan FAIL/REVIEW: {non_pass_checks}"
+            )
+            return False
 
     # --------------------------------------------------------
     # KONTRAK 12 KUNCI (agar UI tidak diam-diam menyembunyikan kartu)
@@ -366,12 +407,31 @@ def run_json_test(test_case):
         return False
 
     # --------------------------------------------------------
-    # PASS
+    # CHECK EXPECTED FAIL CHECKS
     # --------------------------------------------------------
+
+    expected_checks = test_case.get("expected_checks", [])
+
+    missing_expected = [
+        key
+        for key in expected_checks
+        if data["checks"].get(key, {}).get("status") != "FAIL"
+    ]
+
+    if missing_expected:
+        print(
+            f"[FAIL] {filename} - "
+            f"pemeriksaan yang diharapkan FAIL tidak ditemukan: "
+            f"{missing_expected}"
+        )
+        return False
+
+# --------------------------------------------------------
+# PASS
+# --------------------------------------------------------
 
     print(f"[PASS] {filename}")
     return True
-
 
 # ============================================================
 # MAIN

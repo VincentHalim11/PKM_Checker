@@ -66,14 +66,14 @@ class _HomeScreenState extends State<HomeScreen> {
         scheme: _selectedScheme,
       );
 
-    setState(() {
-      _validationResult = result;
-      _status = result['status']?.toString() ?? 'UNKNOWN';
+      setState(() {
+        _validationResult = result;
+        _status = result['status']?.toString() ?? 'UNKNOWN';
 
-      if (_status == 'ERROR') {
-        _error = result['error']?.toString();
-      }
-    });
+        if (_status == 'ERROR') {
+          _error = result['error']?.toString();
+        }
+      });
     } catch (e) {
       setState(() {
         _status = 'ERROR';
@@ -304,7 +304,25 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final message = check['message']?.toString() ?? '';
 
-    final details = check['details'];
+    dynamic details = check['details'];
+
+    // Font-size checker mengembalikan temuan ukuran teks dan caption
+    // dalam dua daftar terpisah. Gabungkan agar keduanya terlihat di UI.
+    if (key == 'font_size') {
+      final bodyDetails = check['details'];
+      final captionDetails = check['caption_details'];
+      final bodyItems = bodyDetails is List ? bodyDetails : <dynamic>[];
+      final captionItems = captionDetails is List
+          ? captionDetails
+          : <dynamic>[];
+
+      if (bodyItems.isNotEmpty || captionItems.isNotEmpty) {
+        details = {
+          'body': bodyItems,
+          'caption': captionItems,
+        };
+      }
+    }
 
     final summary = _getSummary(key, status);
 
