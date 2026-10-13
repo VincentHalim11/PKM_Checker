@@ -431,10 +431,21 @@ def collect_font_spans(pdf_path: str, scheme: str = "GFT"):
                             continue
                         if span.get("flags", 0) & 1:      # superscript (mis. "1)" pada nama penulis)
                             continue
+                        raw_bbox = span.get("bbox")
+                        bbox = (
+                            [round(float(coord), 2) for coord in raw_bbox]
+                            if isinstance(raw_bbox, (list, tuple)) and len(raw_bbox) == 4
+                            else None
+                        )
+
                         out.append({
                             "page": pno,
                             "size": round(float(span.get("size", 0)), 2),
+                            # Keep the complete line for existing sample/report behavior.
                             "text": line_text,
+                            # Preserve this specific span's text and bounding box for highlights.
+                            "span_text": text[:160],
+                            "bbox": bbox,
                             "kind": kind,
                         })
 
@@ -460,7 +471,9 @@ def evaluate_font_sizes(pdf_path: str, scheme: str = "GFT"):
     Return dict:
       invalid          : list ukuran salah pada teks biasa/judul/abstrak/tabel
       caption_invalid  : list ukuran salah pada caption
-    Tiap item: {"size", "count", "pages", "samples", "kind"}.
+    Tiap item berisi size/count/pages/samples/kind/expected_sizes/locations.
+    Setiap location berisi nomor halaman 1-based, bbox PyMuPDF dalam points,
+    dan teks span yang sesuai untuk ditandai oleh PDF viewer.
     """
     allowed = _scheme_rules(scheme)
     spans = collect_font_spans(pdf_path, scheme)
@@ -472,12 +485,36 @@ def evaluate_font_sizes(pdf_path: str, scheme: str = "GFT"):
         bucket = {}
         for sp in items:
             key = (sp["size"], sp["kind"])
-            b = bucket.setdefault(key, {"size": sp["size"], "kind": sp["kind"],
-                                        "count": 0, "pages": set(), "samples": []})
+            b = bucket.setdefault(
+                key,
+                {
+                    "size": sp["size"],
+                    "kind": sp["kind"],
+                    "count": 0,
+                    "pages": set(),
+                    "samples": [],
+                    # Coordinates are emitted only for invalid spans, to keep the
+                    # JSON payload focused on actionable findings.
+                    "locations": [],
+                    "expected_sizes": sorted(allowed[sp["kind"]]),
+                },
+            )
             b["count"] += 1
             b["pages"].add(sp["page"])
             if len(b["samples"]) < 3 and sp["text"][:60] not in b["samples"]:
                 b["samples"].append(sp["text"][:60])
+
+            bbox = sp.get("bbox")
+            if isinstance(bbox, list) and len(bbox) == 4:
+                b["locations"].append(
+                    {
+                        "page": sp["page"],
+                        # PyMuPDF page coordinates in points: [x0, y0, x1, y1].
+                        "bbox": bbox,
+                        "text": sp.get("span_text") or sp["text"][:160],
+                    }
+                )
+
         res = []
         for b in bucket.values():
             b["pages"] = sorted(b["pages"])

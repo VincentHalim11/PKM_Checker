@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../services/validator_service.dart';
 import '../widgets/validation_check_card.dart';
+import 'pdf_viewer_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -84,6 +85,52 @@ class _HomeScreenState extends State<HomeScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  // ==========================================================
+  // LOKASI HIGHLIGHT UKURAN FONT
+  // ==========================================================
+
+  List<Map<String, dynamic>> _getFontSizeHighlightLocations() {
+    final checks = _validationResult?['checks'];
+    if (checks is! Map) return const <Map<String, dynamic>>[];
+
+    final fontSizeCheck = checks['font_size'];
+    if (fontSizeCheck is! Map) return const <Map<String, dynamic>>[];
+
+    final locations = <Map<String, dynamic>>[];
+
+    void collectLocations(dynamic groupedDetails) {
+      if (groupedDetails is! List) return;
+
+      for (final group in groupedDetails) {
+        if (group is! Map) continue;
+        final groupLocations = group['locations'];
+        if (groupLocations is! List) continue;
+
+        for (final item in groupLocations) {
+          if (item is! Map) continue;
+          final bbox = item['bbox'];
+          if (bbox is! List || bbox.length < 4) continue;
+          if (item['page'] == null) continue;
+
+          locations.add(Map<String, dynamic>.from(item));
+        }
+      }
+    }
+
+    // Temuan teks utama dan caption disimpan terpisah oleh Python validator.
+    collectLocations(fontSizeCheck['details']);
+    collectLocations(fontSizeCheck['caption_details']);
+
+    // Hilangkan duplikasi jika suatu lokasi muncul di kedua daftar.
+    final uniqueLocations = <String, Map<String, dynamic>>{};
+    for (final location in locations) {
+      final key = '${location['page']}|${location['bbox']}|${location['text']}';
+      uniqueLocations.putIfAbsent(key, () => location);
+    }
+
+    return uniqueLocations.values.toList(growable: false);
   }
 
   // ==========================================================
@@ -317,10 +364,7 @@ class _HomeScreenState extends State<HomeScreen> {
           : <dynamic>[];
 
       if (bodyItems.isNotEmpty || captionItems.isNotEmpty) {
-        details = {
-          'body': bodyItems,
-          'caption': captionItems,
-        };
+        details = {'body': bodyItems, 'caption': captionItems};
       }
     }
 
@@ -460,6 +504,25 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                   ),
+                ),
+
+                const SizedBox(height: 10),
+                OutlinedButton.icon(
+                  onPressed: _selectedPdfPath == null || _isLoading
+                      ? null
+                      : () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => PdfViewerScreen(
+                                pdfPath: _selectedPdfPath!,
+                                highlightLocations:
+                                    _getFontSizeHighlightLocations(),
+                              ),
+                            ),
+                          );
+                        },
+                  icon: const Icon(Icons.picture_as_pdf_outlined),
+                  label: const Text('Lihat PDF'),
                 ),
 
                 const SizedBox(height: 20),
