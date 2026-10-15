@@ -4,12 +4,13 @@ import sys
 import pymupdf
 import json
 import io
+import tempfile
 from contextlib import redirect_stdout, redirect_stderr
 from statistics import median
 
 from font_checker import extract_fonts, normalize_font_name
 from font_size_checker import evaluate_font_sizes
-from filters import is_page_number_text
+from filters import is_page_number_text, is_symbol_only
 from line_spacing_checker import evaluate as evaluate_line_spacing
 from page_number_analyzer import evaluate as evaluate_page_number
 from page_number_analyzer import evaluate_sequence as evaluate_page_number_sequence
@@ -103,30 +104,96 @@ def check_page_size(pdf_path):
 # ============================================================
 
 def check_font(pdf_path):
+    """
+    Memeriksa jenis font dan mengembalikan koordinat setiap span
+    yang menggunakan font selain FONT["family"].
+
+    Format lokasi kompatibel dengan overlay PDF Viewer:
+    page, bbox, text, font.
+    """
     fonts = extract_fonts(pdf_path)
 
     invalid_fonts = []
 
-    for font_name in fonts:
+    for font_name, count in fonts.items():
         normalized = normalize_font_name(font_name)
 
         if normalized != FONT["family"]:
             invalid_fonts.append({
-                "font": font_name,
-                "count": fonts[font_name]
+                "font": normalized,
+                "count": count,
             })
+
+    # Nama font yang benar-benar dinyatakan tidak sesuai oleh checker.
+    invalid_font_names = {
+        item["font"] for item in invalid_fonts
+    }
+
+    locations = []
+
+    if invalid_font_names:
+        doc = pymupdf.open(pdf_path)
+
+        try:
+            for page_number, page in enumerate(doc, start=1):
+                page_dict = page.get_text("dict")
+
+                for block in page_dict.get("blocks", []):
+                    if block.get("type") != 0:
+                        continue
+
+                    for line in block.get("lines", []):
+                        for span in line.get("spans", []):
+                            text = span.get("text", "").strip()
+                            if not text or is_symbol_only(text):
+                                continue
+
+                            raw_font = span.get("font", "Unknown")
+                            normalized = normalize_font_name(raw_font)
+
+                            # Gunakan aturan normalisasi yang sama dengan
+                            # check_font() dan extract_fonts().
+                            if normalized not in invalid_font_names:
+                                continue
+
+                            bbox = span.get("bbox")
+                            if not isinstance(bbox, (list, tuple)) or len(bbox) < 4:
+                                continue
+
+                            try:
+                                coordinates = [
+                                    round(float(value), 2)
+                                    for value in bbox[:4]
+                                ]
+                            except (TypeError, ValueError):
+                                continue
+
+                            x0, y0, x1, y1 = coordinates
+                            if x1 <= x0 or y1 <= y0:
+                                continue
+
+                            locations.append({
+                                "page": page_number,
+                                "bbox": coordinates,
+                                "text": text,
+                                "font": normalized,
+                            })
+        finally:
+            doc.close()
 
     if invalid_fonts:
         return {
             "status": "FAIL",
             "message": "Ditemukan font yang tidak sesuai.",
-            "details": invalid_fonts
+            "details": invalid_fonts,
+            "locations": locations,
         }
 
     return {
         "status": "PASS",
         "message": f"Semua font yang ditemukan sesuai {FONT['family']}.",
-        "details": []
+        "details": [],
+        "locations": [],
     }
 
 
@@ -341,11 +408,211 @@ def check_margins(pdf_path):
         bottom_boundary = page_height - expected_bottom + tolerance
 
         page_violations = []
+        # --------------------------------------------
+        # Periksa margin tabel
+        # --------------------------------------------
+
+        try:
+            detected_tables = page.find_tables().tables
+        except Exception as exc:
+            # Jika deteksi tabel gagal, pemeriksaan margin
+            # teks dan gambar tetap dilanjutkan.
+            print(
+                f"⚠️ Deteksi tabel gagal pada halaman "
+                f"{page_number}: {exc}"
+            )
+            detected_tables = []
+
+        for table in detected_tables:
+
+            raw_bbox = table.bbox
+
+            if not isinstance(raw_bbox, (list, tuple)) or len(raw_bbox) < 4:
+                continue
+
+            try:
+                tx0, ty0, tx1, ty1 = [
+                    float(value) for value in raw_bbox[:4]
+                ]
+            except (TypeError, ValueError):
+                continue
+
+            if tx1 <= tx0 or ty1 <= ty0:
+                continue
+
+            table_bbox = [
+                round(tx0, 2),
+                round(ty0, 2),
+                round(tx1, 2),
+                round(ty1, 2),
+            ]
+
+            table_boundaries = [
+                (
+                    "LEFT",
+                    tx0 < left_boundary,
+                    points_to_cm(tx0),
+                    MARGIN["left_cm"],
+                ),
+                (
+                    "RIGHT",
+                    tx1 > right_boundary,
+                    points_to_cm(page_width - tx1),
+                    MARGIN["right_cm"],
+                ),
+                (
+                    "TOP",
+                    ty0 < top_boundary,
+                    points_to_cm(ty0),
+                    MARGIN["top_cm"],
+                ),
+                (
+                    "BOTTOM",
+                    ty1 > bottom_boundary,
+                    points_to_cm(page_height - ty1),
+                    MARGIN["bottom_cm"],
+                ),
+            ]
+
+            for side, violated, position_cm, expected_cm in table_boundaries:
+
+                if violated:
+                    page_violations.append({
+                        "type": side,
+                        "object_type": "TABLE",
+                        "text": "[Tabel]",
+                        "bbox": table_bbox,
+                        "position_cm": position_cm,
+                        "expected_cm": expected_cm,
+                    })
 
         page_dict = page.get_text("dict")
 
+        # Hitung teks agar halaman scan bisa dibedakan.
+        page_text = re.sub(r"\s+", "", page.get_text("text"))
+        page_text_length = len(page_text)
+
         for block in page_dict.get("blocks", []):
 
+            # Periksa blok gambar.
+            if block.get("type") == 1:
+                raw_bbox = block.get("bbox")
+
+                if not isinstance(raw_bbox, (list, tuple)) or len(raw_bbox) < 4:
+                    continue
+
+                try:
+                    ix0, iy0, ix1, iy1 = [
+                        float(value) for value in raw_bbox[:4]
+                    ]
+                except (TypeError, ValueError):
+                    continue
+
+                if ix1 <= ix0 or iy1 <= iy0:
+                    continue
+
+                image_area = (ix1 - ix0) * (iy1 - iy0)
+                page_area = float(page_width * page_height) or 1.0
+                image_ratio = image_area / page_area
+
+                # Hindari menandai halaman scan sebagai gambar biasa.
+                if image_ratio >= 0.35 and page_text_length <= 50:
+                    continue
+
+                image_bbox = [
+                    round(ix0, 2),
+                    round(iy0, 2),
+                    round(ix1, 2),
+                    round(iy1, 2),
+                ]
+                # Abaikan potongan gambar yang hampir seluruhnya
+                # berada di luar batas halaman PDF.
+                try:
+                    block_rect = pymupdf.Rect(
+                        ix0, iy0, ix1, iy1
+                    )
+
+                    max_visible_ratio = None
+
+                    for image_info in page.get_images(full=True):
+                        xref = image_info[0]
+
+                        for placement in page.get_image_rects(xref):
+                            original_rect = pymupdf.Rect(placement)
+                            clipped_rect = original_rect & page.rect
+
+                            if (
+                                clipped_rect.is_empty
+                                or clipped_rect.get_area() <= 0
+                            ):
+                                continue
+
+                            # Cocokkan posisi asli dengan bbox
+                            # gambar yang sedang diperiksa.
+                            same_bbox = all(
+                                abs(a - b) <= 1.5
+                                for a, b in zip(
+                                    clipped_rect, block_rect
+                                )
+                            )
+
+                            if not same_bbox:
+                                continue
+
+                            original_area = original_rect.get_area()
+
+                            if original_area <= 0:
+                                continue
+
+                            visible_ratio = (
+                                clipped_rect.get_area()
+                                / original_area
+                            )
+
+                            if (
+                                max_visible_ratio is None
+                                or visible_ratio > max_visible_ratio
+                            ):
+                                max_visible_ratio = visible_ratio
+
+                    # Abaikan gambar jika kurang dari 5% area
+                    # penempatan aslinya terlihat pada halaman.
+                    if (
+                        max_visible_ratio is not None
+                        and max_visible_ratio < 0.05
+                    ):
+                        continue
+
+                except Exception:
+                    # Jika pemeriksaan tambahan gagal, lanjutkan
+                    # validasi gambar dengan logika sebelumnya.
+                    pass
+
+                boundaries = [
+                    ("LEFT", ix0 < left_boundary, points_to_cm(ix0),
+                    MARGIN["left_cm"]),
+                    ("RIGHT", ix1 > right_boundary,
+                    points_to_cm(page_width - ix1), MARGIN["right_cm"]),
+                    ("TOP", iy0 < top_boundary, points_to_cm(iy0),
+                    MARGIN["top_cm"]),
+                    ("BOTTOM", iy1 > bottom_boundary,
+                    points_to_cm(page_height - iy1), MARGIN["bottom_cm"]),
+                ]
+
+                for side, violated, position_cm, expected_cm in boundaries:
+                    if violated:
+                        page_violations.append({
+                            "type": side,
+                            "object_type": "IMAGE",
+                            "text": "[Gambar]",
+                            "bbox": image_bbox,
+                            "position_cm": position_cm,
+                            "expected_cm": expected_cm,
+                        })
+
+                continue
+
+            # Bagian setelah ini tetap memeriksa blok teks.
             if block.get("type") != 0:
                 continue
 
@@ -368,25 +635,17 @@ def check_margins(pdf_path):
                 if is_page_number_text(text):
                     continue
 
-                x0 = min(
-                    span["bbox"][0]
-                    for span in spans
-                )
+                x0 = min(span["bbox"][0]for span in spans)
+                y0 = min(span["bbox"][1]for span in spans)
+                x1 = max(span["bbox"][2]for span in spans)
+                y1 = max(span["bbox"][3]for span in spans)
 
-                y0 = min(
-                    span["bbox"][1]
-                    for span in spans
-                )
-
-                x1 = max(
-                    span["bbox"][2]
-                    for span in spans
-                )
-
-                y1 = max(
-                    span["bbox"][3]
-                    for span in spans
-                )
+                bbox = [
+                    round(float(x0), 2),
+                    round(float(y0), 2),
+                    round(float(x1), 2),
+                    round(float(y1), 2),
+                ]
 
                 # --------------------------------------------
                 # LEFT
@@ -397,6 +656,7 @@ def check_margins(pdf_path):
                     page_violations.append({
                         "type": "LEFT",
                         "text": text,
+                        "bbox": bbox,
                         "position_cm": points_to_cm(x0),
                         "expected_cm": MARGIN["left_cm"]
                     })
@@ -1066,6 +1326,290 @@ def validate_pdf(pdf_path, scheme):
 }
 
 
+def export_highlighted_pdf(pdf_path, output_path, locations_json_path):
+    """
+    Membuat salinan PDF dengan highlight permanen dan satu halaman legenda.
+
+    locations_json_path berisi:
+    {
+        "font_size": [...],
+        "font": [...],
+        "margin": [...]
+    }
+    """
+
+    source_path = os.path.normcase(os.path.abspath(pdf_path))
+    destination_path = os.path.normcase(os.path.abspath(output_path))
+
+    if source_path == destination_path:
+        raise ValueError("PDF hasil ekspor tidak boleh menimpa PDF asli.")
+
+    if not os.path.isfile(pdf_path):
+        raise FileNotFoundError(f"PDF sumber tidak ditemukan: {pdf_path}")
+
+    with open(locations_json_path, "r", encoding="utf-8") as file:
+        locations_data = json.load(file)
+
+    if not isinstance(locations_data, dict):
+        raise ValueError("Data lokasi highlight harus berbentuk JSON object.")
+
+    # Warna RGB disamakan dengan warna di Flutter:
+    # merah = Colors.red, biru = Colors.blue,
+    # ungu = Colors.deepPurple.
+    categories = [
+        (
+            "font_size",
+            "Ukuran font",
+            "Teks yang ukuran font-nya terdeteksi tidak sesuai aturan.",
+            (244 / 255, 67 / 255, 54 / 255),
+        ),
+        (
+            "font",
+            "Jenis font",
+            "Teks yang jenis font-nya terdeteksi tidak sesuai aturan.",
+            (33 / 255, 150 / 255, 243 / 255),
+        ),
+        (
+            "margin",
+            "Margin",
+            "Pelanggaran margin pada teks, gambar, atau tabel.",
+            (103 / 255, 58 / 255, 183 / 255),
+        ),
+    ]
+
+    doc = pymupdf.open(pdf_path)
+    temp_output_path = None
+
+    try:
+        original_page_count = len(doc)
+        counts = {}
+
+        for category_index, (category, _title, _description, color) in enumerate(categories):
+            locations = locations_data.get(category, [])
+
+            if not isinstance(locations, list):
+                locations = []
+
+            # Hindari menggambar kotak yang identik berulang kali.
+            seen = set()
+
+            for location in locations:
+                if not isinstance(location, dict):
+                    continue
+
+                try:
+                    page_number = int(location["page"])
+                    bbox = location["bbox"]
+
+                    if not isinstance(bbox, (list, tuple)) or len(bbox) < 4:
+                        continue
+
+                    coordinates = [float(value) for value in bbox[:4]]
+
+                except (KeyError, TypeError, ValueError):
+                    continue
+
+                if page_number < 1 or page_number > original_page_count:
+                    continue
+
+                x0, y0, x1, y1 = coordinates
+
+                if x1 <= x0 or y1 <= y0:
+                    continue
+
+                page = doc[page_number - 1]
+
+                # Batasi highlight pada area halaman PDF.
+                rect = pymupdf.Rect(x0, y0, x1, y1) & page.rect
+
+                if rect.is_empty or rect.get_area() <= 0:
+                    continue
+
+                rect_key = (
+                    page_number,
+                    *(round(value, 2) for value in rect),
+                )
+
+                if rect_key in seen:
+                    continue
+
+                seen.add(rect_key)
+
+                # Outline saja, tanpa isian transparan, agar warna kategori
+                # tidak bercampur ketika dua error menandai area yang sama.
+                # Jika bbox bertumpuk, setiap kategori memakai garis terpisah:
+                # merah di luar, biru di tengah, dan ungu pada bbox asli.
+                ring_offset = (len(categories) - 1 - category_index) * 1.5
+                outline_rect = pymupdf.Rect(
+                    rect.x0 - ring_offset,
+                    rect.y0 - ring_offset,
+                    rect.x1 + ring_offset,
+                    rect.y1 + ring_offset,
+                ) & page.rect
+
+                if outline_rect.is_empty or outline_rect.get_area() <= 0:
+                    continue
+
+                page.draw_rect(
+                    outline_rect,
+                    color=color,
+                    width=1.1,
+                    stroke_opacity=1.0,
+                    overlay=True,
+                )
+
+            counts[category] = len(seen)
+
+        # ----------------------------------------------------
+        # Tambahkan halaman legenda di akhir dokumen.
+        # ----------------------------------------------------
+
+        legend_page = doc.new_page(pno=0,width=595,height=842,)
+
+        dark = (0.12, 0.12, 0.16)
+        muted = (0.38, 0.38, 0.42)
+        light_line = (0.82, 0.82, 0.85)
+
+        legend_page.insert_text(
+            (50, 58),
+            "PKM 2026 CHECKER",
+            fontname="hebo",
+            fontsize=12,
+            color=muted,
+        )
+
+        legend_page.draw_line(
+            (50, 78),
+            (545, 78),
+            color=light_line,
+            width=1,
+        )
+
+        legend_page.insert_text(
+            (50, 123),
+            "LEGENDA HASIL PEMERIKSAAN",
+            fontname="hebo",
+            fontsize=20,
+            color=dark,
+        )
+
+        legend_page.insert_text(
+            (50, 154),
+            "Arti warna highlight pada halaman proposal berikutnya:",
+            fontname="helv",
+            fontsize=11,
+            color=muted,
+        )
+
+        legend_page.insert_text(
+            (50, 775),
+            "PDF ini merupakan salinan hasil pemeriksaan. "
+            "Dokumen sumber tidak diubah.",
+            fontname="helv",
+            fontsize=9,
+            color=muted,
+        )
+
+        y_positions = [225, 325, 425]
+
+        for (category, title, description, color), y in zip(
+            categories, y_positions
+        ):
+            # Contoh di legenda mengikuti highlight: garis tepi tanpa isian.
+            legend_page.draw_rect(
+                pymupdf.Rect(55, y - 18, 83, y + 10),
+                color=color,
+                width=1.2,
+                stroke_opacity=1.0,
+                overlay=True,
+            )
+
+            legend_page.insert_text(
+                (100, y - 2),
+                title,
+                fontname="hebo",
+                fontsize=13,
+                color=dark,
+            )
+
+            legend_page.insert_text(
+                (100, y + 22),
+                description,
+                fontname="helv",
+                fontsize=10,
+                color=muted,
+            )
+
+            legend_page.insert_text(
+                (100, y + 43),
+                f"Jumlah lokasi highlight: {counts[category]}",
+                fontname="helv",
+                fontsize=9,
+                color=muted,
+            )
+
+        legend_page.draw_line(
+            (50, 750),
+            (545, 750),
+            color=light_line,
+            width=1,
+        )
+
+        legend_page.insert_text(
+            (50, 775),
+            "PDF ini merupakan salinan hasil pemeriksaan. "
+            "Dokumen sumber tidak diubah.",
+            fontname="helv",
+            fontsize=9,
+            color=muted,
+        )
+
+        # Simpan ke file sementara terlebih dahulu, kemudian pindahkan
+        # ke tujuan akhir setelah penyimpanan PDF berhasil.
+        destination_directory = os.path.dirname(
+            os.path.abspath(output_path)
+        )
+        os.makedirs(destination_directory, exist_ok=True)
+
+        fd, temp_output_path = tempfile.mkstemp(
+            prefix="pkm_highlight_",
+            suffix=".pdf",
+            dir=destination_directory,
+        )
+        os.close(fd)
+        os.remove(temp_output_path)
+
+        total_pages = len(doc)
+
+        doc.save(
+            temp_output_path,
+            garbage=4,
+            deflate=True,
+        )
+
+        doc.close()
+        os.replace(temp_output_path, output_path)
+        temp_output_path = None
+
+        return {
+            "status": "PASS",
+            "output_path": os.path.abspath(output_path),
+            "original_pages": original_page_count,
+            "total_pages": total_pages,
+            "legend_added": True,
+            "highlights": counts,
+        }
+
+    finally:
+        try:
+            doc.close()
+        except Exception:
+            pass
+
+        if temp_output_path and os.path.exists(temp_output_path):
+            os.remove(temp_output_path)
+
+
 # ============================================================
 # ERROR DALAM MODE --json
 # ============================================================
@@ -1091,6 +1635,43 @@ def emit_json_error(message):
 # ============================================================
 
 if __name__ == "__main__":
+
+    
+    # Mode ekspor PDF dengan highlight dan halaman legenda.
+    if "--export-highlight" in sys.argv:
+        try:
+            if len(sys.argv) < 2:
+                raise ValueError("Path PDF sumber belum diberikan.")
+
+            pdf_path = sys.argv[1].strip('"')
+
+            def get_argument(flag):
+                if flag not in sys.argv:
+                    raise ValueError(f"Argumen {flag} wajib diberikan.")
+
+                index = sys.argv.index(flag)
+
+                if index + 1 >= len(sys.argv):
+                    raise ValueError(f"Nilai untuk {flag} belum diberikan.")
+
+                return sys.argv[index + 1].strip('"')
+
+            result = export_highlighted_pdf(
+                pdf_path=pdf_path,
+                output_path=get_argument("--output"),
+                locations_json_path=get_argument("--locations-json"),
+            )
+
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            sys.exit(0)
+
+        except Exception as exc:
+            print(json.dumps({
+                "status": "ERROR",
+                "error": str(exc),
+            }, ensure_ascii=False))
+            sys.exit(2)
+
 
     if len(sys.argv) < 2:
         pdf_path = input(

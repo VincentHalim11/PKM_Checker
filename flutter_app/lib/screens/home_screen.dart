@@ -114,7 +114,13 @@ class _HomeScreenState extends State<HomeScreen> {
           if (bbox is! List || bbox.length < 4) continue;
           if (item['page'] == null) continue;
 
-          locations.add(Map<String, dynamic>.from(item));
+          // Simpan metadata grup agar daftar temuan menampilkan ukuran/kategori.
+          locations.add({
+            ...Map<String, dynamic>.from(item),
+            'size': group['size'],
+            'kind': group['kind'],
+            'expected_sizes': group['expected_sizes'],
+          });
         }
       }
     }
@@ -123,7 +129,101 @@ class _HomeScreenState extends State<HomeScreen> {
     collectLocations(fontSizeCheck['details']);
     collectLocations(fontSizeCheck['caption_details']);
 
+    // Tambahkan temuan font/ukuran nomor halaman ke highlight merah.
+    final pageNumberFontCheck = checks['page_number_font'];
+
+    if (pageNumberFontCheck is Map) {
+      final pageNumberLocations = pageNumberFontCheck['locations'];
+
+      if (pageNumberLocations is List) {
+        for (final item in pageNumberLocations) {
+          if (item is! Map) continue;
+
+          final bbox = item['bbox'];
+
+          if (bbox is! List || bbox.length < 4) continue;
+          if (item['page'] == null) continue;
+
+          locations.add({
+            ...Map<String, dynamic>.from(item),
+            'kind': 'page_number',
+            'expected_sizes': item['expected_sizes'] ?? <double>[12.0],
+          });
+        }
+      }
+    }
+
     // Hilangkan duplikasi jika suatu lokasi muncul di kedua daftar.
+    final uniqueLocations = <String, Map<String, dynamic>>{};
+    for (final location in locations) {
+      final key = '${location['page']}|${location['bbox']}|${location['text']}';
+      uniqueLocations.putIfAbsent(key, () => location);
+    }
+
+    return uniqueLocations.values.toList(growable: false);
+  }
+
+  // ==========================================================
+  // LOKASI HIGHLIGHT JENIS FONT
+  // ==========================================================
+
+  List<Map<String, dynamic>> _getFontHighlightLocations() {
+    final checks = _validationResult?['checks'];
+    if (checks is! Map) return const <Map<String, dynamic>>[];
+
+    final fontCheck = checks['font'];
+    if (fontCheck is! Map) return const <Map<String, dynamic>>[];
+
+    final rawLocations = fontCheck['locations'];
+    if (rawLocations is! List) return const <Map<String, dynamic>>[];
+
+    final locations = <Map<String, dynamic>>[];
+    for (final item in rawLocations) {
+      if (item is! Map) continue;
+      final bbox = item['bbox'];
+      if (bbox is! List || bbox.length < 4) continue;
+      if (item['page'] == null) continue;
+
+      locations.add(Map<String, dynamic>.from(item));
+    }
+
+    // Hilangkan duplikasi lokasi bila hasil engine memuat lokasi yang sama.
+    final uniqueLocations = <String, Map<String, dynamic>>{};
+    for (final location in locations) {
+      final key =
+          '${location['page']}|${location['bbox']}|${location['text']}|${location['font']}';
+      uniqueLocations.putIfAbsent(key, () => location);
+    }
+
+    return uniqueLocations.values.toList(growable: false);
+  }
+
+  // ==========================================================
+  // LOKASI HIGHLIGHT MARGIN
+  // ==========================================================
+
+  List<Map<String, dynamic>> _getMarginHighlightLocations() {
+    final checks = _validationResult?['checks'];
+    if (checks is! Map) return const <Map<String, dynamic>>[];
+
+    final marginCheck = checks['margin'];
+    if (marginCheck is! Map) return const <Map<String, dynamic>>[];
+
+    final rawDetails = marginCheck['details'];
+    if (rawDetails is! List) return const <Map<String, dynamic>>[];
+
+    final locations = <Map<String, dynamic>>[];
+    for (final item in rawDetails) {
+      if (item is! Map) continue;
+      final bbox = item['bbox'];
+      if (bbox is! List || bbox.length < 4) continue;
+      if (item['page'] == null) continue;
+
+      locations.add(Map<String, dynamic>.from(item));
+    }
+
+    // Lokasi dapat tercatat lebih dari sekali jika satu baris melanggar
+    // lebih dari satu sisi. Untuk highlight visual, cukup satu kotak per baris.
     final uniqueLocations = <String, Map<String, dynamic>>{};
     for (final location in locations) {
       final key = '${location['page']}|${location['bbox']}|${location['text']}';
@@ -414,7 +514,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 // ==================================================
 
                 const Text(
-                  'PKM 2026 Checker',
+                  'PKM Checker',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
                 ),
@@ -517,6 +617,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                 pdfPath: _selectedPdfPath!,
                                 highlightLocations:
                                     _getFontSizeHighlightLocations(),
+                                fontHighlightLocations:
+                                    _getFontHighlightLocations(),
+                                marginHighlightLocations:
+                                    _getMarginHighlightLocations(),
                               ),
                             ),
                           );

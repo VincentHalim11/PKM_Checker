@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 /// Menjalankan engine Python (validator.py --json) dan mengembalikan hasilnya.
 ///
@@ -219,4 +220,141 @@ class ValidatorService {
 
     return parsed;
   }
+
+  
+  /// Menghasilkan PDF dengan highlight permanen dan halaman legenda.
+  /// Byte hasil ekspor akan dikembalikan agar bisa disimpan melalui dialog.
+  static Future<Uint8List> exportHighlightedPdf({
+    required String pdfPath,
+    required List<Map<String, dynamic>> fontSizeLocations,
+    required List<Map<String, dynamic>> fontLocations,
+    required List<Map<String, dynamic>> marginLocations,
+  }) async {
+    if (!File(pdfPath).existsSync()) {
+      throw Exception('PDF sumber tidak ditemukan: $pdfPath');
+    }
+
+    final tempDir = await Directory.systemTemp.createTemp('pkm_export_');
+
+    try {
+      final locationsFile = File(
+        _join([tempDir.path, 'locations.json']),
+      );
+      final outputFile = File(
+        _join([tempDir.path, 'highlighted.pdf']),
+      );
+
+      await locationsFile.writeAsString(
+        jsonEncode({
+          'font_size': fontSizeLocations,
+          'font': fontLocations,
+          'margin': marginLocations,
+        }),
+        encoding: utf8,
+      );
+
+      final bundled = _findBundledEngine();
+
+      final String executable;
+      final List<String> arguments;
+      final String workingDirectory;
+
+      if (bundled != null) {
+        executable = bundled;
+        arguments = [
+          pdfPath,
+          '--export-highlight',
+          '--locations-json',
+          locationsFile.path,
+          '--output',
+          outputFile.path,
+        ];
+        workingDirectory = File(bundled).parent.path;
+      } else {
+        final engineDir = _findEngineDir();
+
+        if (engineDir == null) {
+          throw Exception(
+            'Python engine tidak ditemukan. '
+            'Pastikan folder python_engine tersedia.',
+          );
+        }
+
+        executable = _findPython(engineDir);
+        arguments = [
+          _join([engineDir, 'src', 'validator.py']),
+          pdfPath,
+          '--export-highlight',
+          '--locations-json',
+          locationsFile.path,
+          '--output',
+          outputFile.path,
+        ];
+        workingDirectory = _join([engineDir, 'src']);
+      }
+
+      final Process process;
+
+      try {
+        process = await Process.start(
+          executable,
+          arguments,
+          runInShell: false,
+          workingDirectory: workingDirectory,
+          environment: {
+            'PYTHONIOENCODING': 'utf-8',
+            'PYTHONUTF8': '1',
+          },
+        );
+      } on ProcessException catch (e) {
+        throw Exception('Gagal menjalankan engine ekspor: ${e.message}');
+      }
+
+      final stdoutFuture = process.stdout.transform(utf8.decoder).join();
+      final stderrFuture = process.stderr.transform(utf8.decoder).join();
+
+      final int exitCode;
+
+      try {
+        exitCode = await process.exitCode.timeout(timeout);
+      } on TimeoutException {
+        process.kill();
+        throw Exception('Ekspor PDF melewati batas waktu.');
+      }
+
+      final output = (await stdoutFuture).trim();
+      final stderr = (await stderrFuture).trim();
+
+      Map<String, dynamic> result;
+
+      try {
+        result = Map<String, dynamic>.from(
+          jsonDecode(output) as Map,
+        );
+      } catch (_) {
+        throw Exception(
+          'Respons ekspor bukan JSON yang valid.\n'
+          '${output.isNotEmpty ? output : stderr}',
+        );
+      }
+
+      if (exitCode != 0 || result['status'] != 'PASS') {
+        final errorMessage = result['error'] ??
+            (stderr.isNotEmpty ? stderr : output);
+
+        throw Exception('Ekspor PDF gagal: $errorMessage');
+      }
+
+      if (!await outputFile.exists()) {
+        throw Exception('Engine selesai, tetapi PDF hasil ekspor tidak ditemukan.');
+      }
+
+      return await outputFile.readAsBytes();
+    } finally {
+      if (await tempDir.exists()) {
+        await tempDir.delete(recursive: true);
+      }
+    }
+  }
+
 }

@@ -15,7 +15,7 @@ OCR_SCALE = 2
 LOW_TEXT_CHARS = 50     # HEURISTIK
 TOC_DOT_LINES = 3       # HEURISTIK
 MAX_HEADING_LEN = 100   # HEURISTIK
-IMAGE_PAGE_RATIO = 0.4  # HEURISTIK: gambar >= 40% luas halaman + hampir tanpa teks = kandidat scan
+IMAGE_PAGE_RATIO = 0.35  # HEURISTIK: gambar >= 40% luas halaman + hampir tanpa teks = kandidat scan
 
 DOT_LEADER = re.compile(r"(\.\s*){5,}")
 NUM_ONLY = re.compile(r"\d{1,3}|[ivxIVX]{1,6}")

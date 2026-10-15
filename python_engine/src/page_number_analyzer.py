@@ -77,12 +77,26 @@ def find_candidates(page):
             xc = (x0 + x1) / 2
             hpos = "kiri" if xc < w / 3 else ("kanan" if xc > 2 * w / 3 else "tengah")
             s0 = spans[0]
+
             found.append({
-                "text": text, "style": st, "vpos": vpos, "hpos": hpos,
-                "font": s0["font"], "size": round(s0["size"], 2),
+                "text": text,
+                "style": st,
+                "vpos": vpos,
+                "hpos": hpos,
+                "font": s0["font"],
+                "size": round(s0["size"], 2),
+                "bbox": [
+                    round(float(x0), 2),
+                    round(float(y0), 2),
+                    round(float(x1), 2),
+                    round(float(y1), 2),
+                ],
                 "right_gap_cm": round((w - x1) / PT_PER_CM, 2),
-                "v_gap_cm": round((y0 if vpos == "atas" else h - y1) / PT_PER_CM, 2),
+                "v_gap_cm": round(
+                    (y0 if vpos == "atas" else h - y1) / PT_PER_CM, 2
+                ),
             })
+
     return found
 
 
@@ -201,20 +215,65 @@ def evaluate(pdf_path):
 
     # --- font ---
     want = PAGE_NUMBER["font_size_pt"]
-    bad_font = [(p, x["font"], x["size"]) for p, x in found
-                if not (is_times(x["font"]) and abs(x["size"] - want) <= SIZE_TOL)]
+
+    bad_font = [
+        (p, x["font"], x["size"])
+        for p, x in found
+        if not (
+            is_times(x["font"])
+            and abs(x["size"] - want) <= SIZE_TOL
+        )
+    ]
+
+    # Lokasi nomor halaman yang font atau ukurannya tidak sesuai.
+    # Harus dibuat SEBELUM font_r menggunakannya.
+    bad_font_locations = [
+        {
+            "page": p,
+            "bbox": x["bbox"],
+            "text": x["text"],
+            "font": x["font"],
+            "size": x["size"],
+            "expected_sizes": [want],
+            "kind": "page_number",
+        }
+        for p, x in found
+        if not (
+            is_times(x["font"])
+            and abs(x["size"] - want) <= SIZE_TOL
+        )
+    ]
+
     if bad_font:
-        combos = Counter((f, s) for _, f, s in bad_font).most_common()
-        # Aturan (konfirmasi staff): nomor halaman WAJIB Times New Roman 12 pt -> FAIL.
-        font_r = {"status": "FAIL",
-                  "message": f"{len(bad_font)} dari {len(found)} nomor bukan "
-                             f"{PAGE_NUMBER['font_family']} {want:.0f} pt: {combos}",
-                  "details": {"bad": bad_font, "pages_without_number": no_num}}
+        combos = Counter(
+            (font, size)
+            for _, font, size in bad_font
+        ).most_common()
+
+        font_r = {
+            "status": "FAIL",
+            "message": (
+                f"{len(bad_font)} dari {len(found)} nomor bukan "
+                f"{PAGE_NUMBER['font_family']} {want:.0f} pt: {combos}"
+            ),
+            "details": {
+                "bad": bad_font,
+                "pages_without_number": no_num,
+            },
+            "locations": bad_font_locations,
+        }
     else:
-        font_r = {"status": "PASS",
-                  "message": f"Semua nomor terdeteksi {PAGE_NUMBER['font_family']} "
-                             f"{want:.0f} pt. ({scope})",
-                  "details": {"pages_without_number": no_num}}
+        font_r = {
+            "status": "PASS",
+            "message": (
+                f"Semua nomor terdeteksi "
+                f"{PAGE_NUMBER['font_family']} {want:.0f} pt. ({scope})"
+            ),
+            "details": {
+                "pages_without_number": no_num,
+            },
+            "locations": [],
+        }
 
     # --- posisi (gaya -> posisi yang diwajibkan) ---
     bad_pos = [(p, x["text"], x["style"], f"{x['vpos']} {x['hpos']}")
