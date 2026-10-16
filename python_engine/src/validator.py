@@ -1439,7 +1439,7 @@ def export_highlighted_pdf(pdf_path, output_path, locations_json_path):
                 # tidak bercampur ketika dua error menandai area yang sama.
                 # Jika bbox bertumpuk, setiap kategori memakai garis terpisah:
                 # merah di luar, biru di tengah, dan ungu pada bbox asli.
-                ring_offset = (len(categories) - 1 - category_index) * 1.5
+                ring_offset = (len(categories) - 1 - category_index) * 3.0
                 outline_rect = pymupdf.Rect(
                     rect.x0 - ring_offset,
                     rect.y0 - ring_offset,
@@ -1453,7 +1453,7 @@ def export_highlighted_pdf(pdf_path, output_path, locations_json_path):
                 page.draw_rect(
                     outline_rect,
                     color=color,
-                    width=1.1,
+                    width=2.0,
                     stroke_opacity=1.0,
                     overlay=True,
                 )

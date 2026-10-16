@@ -85,21 +85,40 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         final isSelected =
             _selectedLocationKey == _locationKey(location, category);
 
+        // Jarak setiap kategori agar garis tidak bertumpuk.
+        final double inset;
+        switch (category) {
+          case 'font_size':
+            inset = -6.0; // Merah: garis paling luar
+            break;
+          case 'font':
+            inset = -4.0; // Biru: garis tengah
+            break;
+          case 'margin':
+            inset = -2.0; // Ungu: garis paling dalam
+            break;
+          default:
+            inset = -2.0;
+        }
+
+        final highlightLeft = x0 * scaleX + inset;
+        final highlightTop = y0 * scaleY + inset;
+        final highlightWidth = width - (2 * inset);
+        final highlightHeight = height - (2 * inset);
+
+        if (highlightWidth <= 0 || highlightHeight <= 0) continue;
         overlays.add(
           Positioned(
-            left: x0 * scaleX,
-            top: y0 * scaleY,
-            width: width,
-            height: height,
+            left: highlightLeft,
+            top: highlightTop,
+            width: highlightWidth,
+            height: highlightHeight,
             child: IgnorePointer(
-              // Interaksi dilakukan melalui daftar temuan, supaya gesture
-              // scroll/zoom pada PDF tidak terganggu oleh overlay.
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: isSelected ? 0.34 : 0.22),
                   border: Border.all(
-                    color: isSelected? color: color.withValues(alpha: 0.80),
-                    width: isSelected ? 2.0 : 0.8,
+                    color: color,
+                    width: isSelected ? 2.2 : 1.3,
                   ),
                   borderRadius: BorderRadius.circular(2),
                 ),
@@ -137,7 +156,6 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
             width: 16,
             height: 16,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.22),
               border: Border.all(color: color, width: 1),
               borderRadius: BorderRadius.circular(2),
             ),
@@ -239,14 +257,15 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                     padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
                     child: Text(
                       title,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                      style: Theme.of(context).textTheme.titleLarge
+                          ?.copyWith(fontWeight: FontWeight.bold),
                     ),
                   ),
                   const Padding(
                     padding: EdgeInsets.fromLTRB(20, 0, 20, 10),
-                    child: Text('Pilih temuan untuk menuju halaman terkait di PDF.'),
+                    child: Text(
+                      'Pilih temuan untuk menuju halaman terkait di PDF.',
+                    ),
                   ),
                   const Divider(height: 1),
                   Expanded(
@@ -268,8 +287,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                             width: 12,
                             height: 40,
                             decoration: BoxDecoration(
-                              color: color.withValues(alpha: 0.22),
-                              border: Border.all(color: color,width: 1.3),
+                              border: Border.all(color: color, width: 1.3),
                               borderRadius: BorderRadius.circular(3),
                             ),
                           ),
@@ -281,7 +299,10 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                             overflow: TextOverflow.ellipsis,
                           ),
                           subtitle: Text(description),
-                          trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                          trailing: const Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                          ),
                           onTap: () async {
                             Navigator.of(sheetContext).pop();
                             await _jumpToLocation(location, key: key);
@@ -311,7 +332,9 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         pageNumber > _controller.pageCount) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('PDF masih dimuat. Coba lagi sebentar.')),
+          const SnackBar(
+            content: Text('PDF masih dimuat. Coba lagi sebentar.'),
+          ),
         );
       }
       return;
@@ -325,7 +348,6 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       anchor: PdfPageAnchor.all,
     );
   }
-
 
   Future<void> _exportHighlightedPdf() async {
     if (_isExporting) return;
@@ -343,10 +365,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
               '_highlighted.pdf',
             ),
         acceptedTypeGroups: const [
-          XTypeGroup(
-            label: 'PDF',
-            extensions: ['pdf'],
-          ),
+          XTypeGroup(label: 'PDF', extensions: ['pdf']),
         ],
         confirmButtonText: 'Simpan',
       );
@@ -371,9 +390,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 
     String normalisePath(String path) {
       final absolutePath = File(path).absolute.path;
-      return Platform.isWindows
-          ? absolutePath.toLowerCase()
-          : absolutePath;
+      return Platform.isWindows ? absolutePath.toLowerCase() : absolutePath;
     }
 
     // Jangan sampai PDF asli tertimpa.
@@ -413,9 +430,9 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     } catch (error) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal mengekspor PDF: $error')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal mengekspor PDF: $error')));
     } finally {
       if (mounted) {
         setState(() => _isExporting = false);
@@ -423,11 +440,9 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
       appBar: AppBar(
         title: Text(
           widget.pdfPath.split(RegExp(r'[\\/]')).last,
